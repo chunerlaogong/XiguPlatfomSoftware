@@ -5,6 +5,7 @@
 #include "BerthPo_StatisMagneticDensity.h"
 #include "BerthPo_Common.h"
 #include "BerthPo_CompileFiles.h"
+#include <math.h>
 /*********************引用外部变量*****************/
 
 extern SBERTHPO_PARK_STATUS parkStatus;
@@ -96,14 +97,13 @@ uint8_t BerthPo_BottomvalAdjustProcess()
 {
     static uint8_t mInit = 0xee;
     static BERTH_STATE m_lastParkState = BERTHPO_PARK_STATE_NULL;
-    uint8_t m_currentParkStatus = parkStatus.currentParkState;
     SRM3100_SAMPLE_DATA m_sampleData;
 
     // 校准本底或初次运行 初始化统计信息
     if (1 == sensorRm3100.clearBottomBufferFlag || mInit == 0xee)
     {
-        BerthPo_InitBottomTimesStatisSet((&sensorRm3100), &S_bottomTimes);
-        BerthPo_InitBottomCnsTimeStatisSet(&(sensorRm3100), &S_bottomLongTime);
+        BerthPo_InitBottomTimesStatisSet(&sensorRm3100, &S_bottomTimes);
+        BerthPo_InitBottomCnsTimeStatisSet(&sensorRm3100, &S_bottomLongTime);
         BerthPo_GetRealTimeBottom();
         mInit = 0;
     }
@@ -112,9 +112,8 @@ uint8_t BerthPo_BottomvalAdjustProcess()
     m_sampleData.y = sensorRm3100.rm3100MagneticBase.y;
     m_sampleData.z = sensorRm3100.rm3100MagneticBase.z;
     m_sampleData.diffOfRM = sensorRm3100.rm3100MagneticBase.val;
-
     //有车或无车状态分别判断
-    switch (m_currentParkStatus)
+    switch (parkStatus.currentParkState)
     {
         case BERTHPO_PARK_STATE_NULL:   //无车
             // 通过多次无车数据调整本底
@@ -123,7 +122,7 @@ uint8_t BerthPo_BottomvalAdjustProcess()
                 if (1 == sensorRm3100.rm3100MagneticBase.done)
                 {
                     if (BerthPo_BottomTimesAdjustStatisProcess(&m_sampleData,
-                            &(sensorRm3100), &S_bottomTimes) == 1)
+                            &sensorRm3100, &S_bottomTimes) == 1)
                     {
                         // 判断是否满足本底调整条件
                         if (BerthPo_SatisfyBottomConstraintCondition(&S_bottomTimes) == 1)
@@ -147,11 +146,11 @@ uint8_t BerthPo_BottomvalAdjustProcess()
             if (1 == sensorRm3100.rm3100MagneticBase.done)
             {
                 if (BerthPo_BottomCnsTimeAdjustStatisProcess(&m_sampleData,
-                        &(sensorRm3100), &S_bottomLongTime) == 1)
+                        &sensorRm3100, &S_bottomLongTime) == 1)
                 {
 
                     // 判断和某一次无车数据是否一致
-                    if (BerthPo_MatchTimesAndCnsTimeStatis(&(sensorRm3100),
+                    if (BerthPo_MatchTimesAndCnsTimeStatis(&sensorRm3100,
                                                            &S_bottomLongTime) == 1)
                     {
                         // 判断是否满足本底调整条件
@@ -170,7 +169,7 @@ uint8_t BerthPo_BottomvalAdjustProcess()
                             sensorRm3100.getTimeBottomCount = 63;
                         }
                         // 清空长时间无车统计
-                        BerthPo_InitBottomCnsTimeStatisSet(&(sensorRm3100), &S_bottomLongTime);
+                        BerthPo_InitBottomCnsTimeStatisSet(&sensorRm3100, &S_bottomLongTime);
                     }
                 }
             }
@@ -179,20 +178,20 @@ uint8_t BerthPo_BottomvalAdjustProcess()
         case BERTHPO_PARK_STATE_HAVE:   //有车
 
             // 初始化
-            if (BERTHPO_PARK_STATE_NULL == m_lastParkState)
+            if (BERTHPO_PARK_STATE_NULL == parkStatus.currentParkState)
                 S_noParkStartstatisFlag = 0;
 
             if (MAGNETIC_STATE_CONFIRM == sensorRm3100.rm3100MagneticDensity.state)
             {
                 S_noParkStartstatisFlag = 1;
                 // 清空长时间无车统计
-                BerthPo_InitBottomCnsTimeStatisSet(&(sensorRm3100), &S_bottomLongTime);
+                BerthPo_InitBottomCnsTimeStatisSet(&sensorRm3100, &S_bottomLongTime);
             }
             break;
         default:
             break;
     }
-    m_lastParkState = (BERTH_STATE)m_currentParkStatus;
+    m_lastParkState = (BERTH_STATE)parkStatus.currentParkState;
     return 1;
 
 }

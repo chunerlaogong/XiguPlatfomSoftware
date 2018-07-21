@@ -10,7 +10,7 @@
 /*****************结构体定义********************/
 
 /***************************函数定义*****************************/
-void BerthPo_InitStatisSet(PSENSOR_RM3100 pSensor3100, PRM3100_STATISSET pRm3100StatisSet, PRM3100_MAGNETIC pRm3100Magnetic); //初始化
+void BerthPo_InitStatisSet(PSENSOR_RM3100 pSensor3100, PRM3100_MAGNETIC pRm3100Magnetic); //初始化; //初始化
 void BerthPo_ZeroStatisSet(PRM3100_STATISSET pRm3100StatisSet);
 void BerthPo_EnqueueStatisSet(PSENSOR_RM3100 pSensor3100, PRM3100_STATISSET pRm3100StatisSet, PRM3100_SAMPLE_DATA pRm3100SampleData); 
 uint8_t BerthPo_QueueFullStatisSet(PRM3100_STATISSET pRm3100StatisSet);

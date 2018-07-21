@@ -2104,9 +2104,6 @@
             <group>
                 <name>src</name>
                 <file>
-                    <name>$PROJ_DIR$\..\..\..\SOURCE\App\BerthPo_NBBC95B5\src\BerthPo_BottomValAdjustAdaptive.c</name>
-                </file>
-                <file>
                     <name>$PROJ_DIR$\..\..\..\SOURCE\App\BerthPo_NBBC95B5\src\BerthPo_BT.c</name>
                 </file>
                 <file>
@@ -2122,15 +2119,18 @@
                     <name>$PROJ_DIR$\..\..\..\SOURCE\App\BerthPo_NBBC95B5\src\BerthPo_NB.c</name>
                 </file>
                 <file>
-                    <name>$PROJ_DIR$\..\..\..\SOURCE\App\BerthPo_NBBC95B5\src\BerthPo_ParkStateJudge.c</name>
-                </file>
-                <file>
                     <name>$PROJ_DIR$\..\..\..\SOURCE\App\BerthPo_NBBC95B5\src\BerthPo_Sleep.c</name>
                 </file>
-                <file>
-                    <name>$PROJ_DIR$\..\..\..\SOURCE\App\BerthPo_NBBC95B5\src\BerthPo_StatisMagneticDensity.c</name>
-                </file>
             </group>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\SOURCE\App\BerthPo_NBBC95B5\src\BerthPo_BottomValAdjustAdaptive.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\SOURCE\App\BerthPo_NBBC95B5\src\BerthPo_ParkStateJudge.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\SOURCE\App\BerthPo_NBBC95B5\src\BerthPo_StatisMagneticDensity.c</name>
+            </file>
         </group>
     </group>
     <group>

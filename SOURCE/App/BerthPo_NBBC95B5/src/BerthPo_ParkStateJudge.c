@@ -11,15 +11,13 @@
 #include "Sleep.h"
 #include "Crc.h"
 #include "BerthPo_CompileFiles.h"
-#include "Drivers_BC95.h"
-
+#include "Drivers_SX1280.h"
 /***************引用外部变量******************/
 extern SBERTHPO_PARK_STATUS parkStatus;
 extern SCONTROL_CONFIG  controlConfig;
 extern SSENSOR_RM3100 sensorRm3100;
 extern LED_GPIO_TypeDef LED_GPIO;
 extern SCONTROL_SYMPLE tagConfigSymple;
-extern SBC95_GPIO_TypeDef BC95_GPIO;
 /*
 * 初始化状态判断输入参数
 */
@@ -54,7 +52,7 @@ uint8_t BerthPo_BerthStateSwithProcess()
     static BERTH_STATE m_lastState =
         BERTHPO_PARK_STATE_NULL;             //历史车位状态
     BERTH_STATE currentState =
-        parkStatus.currentParkState;                      //当前车位状态
+        g_parkState;                      //当前车位状态
     SRM3100_SAMPLE_DATA
     rm3100SampleData;    //临时变量，用于缓存计算过程中的中间值
     //初始化状态判断输入参数
@@ -64,8 +62,8 @@ uint8_t BerthPo_BerthStateSwithProcess()
     //初次调用或清除缓存标志置一时，清除相关缓存区域
     if (1 == sensorRm3100.clearBottomBufferFlag || m_init == 0xee)
     {
-        BerthPo_InitStatisSet(&(sensorRm3100.rm3100MagneticBase));
-        BerthPo_InitStatisSet(&(sensorRm3100.rm3100MagneticDensity));
+        BerthPo_InitStatisSet(&sensorRm3100, &(sensorRm3100.rm3100MagneticBase));
+        BerthPo_InitStatisSet(&sensorRm3100, &(sensorRm3100.rm3100MagneticDensity));
         memset(&S_gNoParkData, 0, sizeof(SRM3100_EMData));
         memset(&(sensorRm3100.rm3100MagneticBaseLower), 0,
                sizeof(SRM3100_MAGNETIC));
@@ -81,9 +79,9 @@ uint8_t BerthPo_BerthStateSwithProcess()
             //如果//当前车位状态与历史车位状态不符，则需要清除记录缓存区中的数据
             if (BERTHPO_PARK_STATE_HAVE == m_lastState)
             {
-                BerthPo_InitStatisSet(&
+                BerthPo_InitStatisSet(&sensorRm3100, &
                                       (sensorRm3100.rm3100MagneticBase));      // 无车磁场强度(地球磁场+环境磁场)
-                BerthPo_InitStatisSet(&
+                BerthPo_InitStatisSet(&sensorRm3100, &
                                       (sensorRm3100.rm3100MagneticDensity));   // 车辆磁干扰_有车状态下使用
 
                 sensorRm3100.rm3100MagneticBaseLower.val = input.diffOfRM;
@@ -93,7 +91,7 @@ uint8_t BerthPo_BerthStateSwithProcess()
             }
 
             // 统计当前数据，用于计算
-            BerthPo_StatisProcess(&rm3100SampleData,
+            BerthPo_StatisProcess(&sensorRm3100, &rm3100SampleData,
                                   &(sensorRm3100.rm3100MagneticBase), 1);
 
             // 保存最接近本底的无车统计值
@@ -128,21 +126,22 @@ uint8_t BerthPo_BerthStateSwithProcess()
             if (BerthPo_ChangeConfirm(&input) == STATE_REVERSAL)
             {
                 ret = STATE_REVERSAL;
-                parkStatus.currentParkState = BERTHPO_PARK_STATE_HAVE;
+				parkStatus.currentParkState = 1;
+                g_parkState = BERTHPO_PARK_STATE_HAVE;
             }
             break;
         case BERTHPO_PARK_STATE_HAVE:    //有车
             //如果当前车位状态与历史车位状态不符，则需要清除记录缓存区中的数据
             if (BERTHPO_PARK_STATE_NULL == m_lastState)
             {
-                BerthPo_InitStatisSet(&
+                BerthPo_InitStatisSet(&sensorRm3100, &
                                       (sensorRm3100.rm3100MagneticDensity));// 车辆磁干扰_有车状态下使用
                 memset(&(sensorRm3100.rm3100MagneticBaseLower), 0,
                        sizeof(SRM3100_MAGNETIC));
             }
 
             // 统计当前数据，用于计算
-            BerthPo_StatisProcess(&rm3100SampleData,
+            BerthPo_StatisProcess(&sensorRm3100, &rm3100SampleData,
                                   &(sensorRm3100.rm3100MagneticDensity), 1);
 
             // 记录最近一次停车统计状态
@@ -152,14 +151,14 @@ uint8_t BerthPo_BerthStateSwithProcess()
             if (BerthPo_ChangeConfirm(&input) == STATE_REVERSAL)
             {
                 ret = STATE_REVERSAL;
-
-                parkStatus.currentParkState = BERTHPO_PARK_STATE_NULL;
+				parkStatus.currentParkState = 0;
+                g_parkState = BERTHPO_PARK_STATE_NULL;
             }
             break;
         default:
             break;
     }
-    m_lastState = (BERTH_STATE) currentState;           //将当前状态保存到历史状态中
+    m_lastState = (BERTH_STATE)currentState;           //将当前状态保存到历史状态中
     sensorRm3100.clearBottomBufferFlag = 0;    //清本底缓存标志关闭
     return ret;
 }
@@ -186,7 +185,7 @@ void BerthPo_ChangeThresholdGet(uint8_t *thr1,
     uint8_t offset = 0;
     //有车或无车时，阈值设定不一致
     // 有车时
-    if (BERTHPO_PARK_STATE_HAVE == parkStatus.currentParkState)
+    if (BERTHPO_PARK_STATE_HAVE == g_parkState)
     {
         offset = sensorRm3100.rm3100MagneticBase.val;
         offset = MIN_(offset, 10);
@@ -275,7 +274,7 @@ uint8_t BerthPo_ChangeJudge(InputInfo* pInput)
                                pInput);
 
     // 有车时
-    if (BERTHPO_PARK_STATE_HAVE == parkStatus.currentParkState)
+    if (BERTHPO_PARK_STATE_HAVE == g_parkState)
     {
         // range_RM 降幅
         if (MAGNETIC_STATE_NULL == sensorRm3100.rm3100MagneticDensity.state)
@@ -455,7 +454,7 @@ uint8_t BerthPo_ChangeConfirm(InputInfo* pInput)
             BSP_RtcGoSleep(sleepTime);   //rtc睡眠时间
             //BSP_RtcDeepSleep();          //进入睡眠
             BerthPo_GetRM3100Data();   //取地磁数据
-            BerthPo_EMDealGeomagneticValue;                //处理地磁数据
+            BerthPo_EMDealGeomagneticValue();                //处理地磁数据
 
             // 重新初始化input
             InputInfo input_temp = BerthPo_InitBerthStateInput();

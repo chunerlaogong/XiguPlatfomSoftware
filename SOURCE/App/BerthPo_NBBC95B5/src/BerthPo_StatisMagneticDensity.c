@@ -12,8 +12,7 @@
 
 /****************变量定义结束************/
 
-void BerthPo_InitStatisSet(PSENSOR_RM3100 pSensor3100,
-                           PRM3100_STATISSET pRm3100StatisSet, PRM3100_MAGNETIC pRm3100Magnetic)
+void BerthPo_InitStatisSet(PSENSOR_RM3100 pSensor3100, PRM3100_MAGNETIC pRm3100Magnetic) //初始化
 {
 
     memset(&(pSensor3100->statisSubset), 0, sizeof(SRM3100_STATISSET));
@@ -298,16 +297,16 @@ void BerthPo_CalculateBottomStatisVarianceMean(PRM3100_STATISSET
 /*
 * 剔除数据
 */
-void BerthPo_DeleteDataStatisSet(PRM3100_STATISSET rm3100StatisSet)
+void BerthPo_DeleteDataStatisSet(PRM3100_STATISSET pRm3100StatisSet)
 {
     uint8_t n = 0, k = 0;
     uint8_t maxDevIndex = 0;
     short dev = 0, maxDev = 0;     //偏差
-    for (n = 0; n < rm3100StatisSet->len; n++)
+    for (n = 0; n < pRm3100StatisSet->len; n++)
     {
-        dev =  abs(rm3100StatisSet->sampleData[n].x - rm3100StatisSet->mean_x);
-        dev += abs(rm3100StatisSet->sampleData[n].y - rm3100StatisSet->mean_y);
-        dev += abs(rm3100StatisSet->sampleData[n].z - rm3100StatisSet->mean_z);
+        dev =  abs(pRm3100StatisSet->sampleData[n].x - pRm3100StatisSet->mean_x);
+        dev += abs(pRm3100StatisSet->sampleData[n].y - pRm3100StatisSet->mean_y);
+        dev += abs(pRm3100StatisSet->sampleData[n].z - pRm3100StatisSet->mean_z);
         if (dev > maxDev)
         {
             maxDev = dev;
@@ -316,38 +315,42 @@ void BerthPo_DeleteDataStatisSet(PRM3100_STATISSET rm3100StatisSet)
     }
 
     // 防止一直去除最新数据
-    if (maxDevIndex == rm3100StatisSet->len - 1)
+    if (maxDevIndex == pRm3100StatisSet->len - 1)
         maxDevIndex = 0;
 
-    for (n = 0, k = 0; n < rm3100StatisSet->len; n++)
+    for (n = 0, k = 0; n < pRm3100StatisSet->len; n++)
     {
         if (n == maxDevIndex)
             continue;
-        rm3100StatisSet->sampleData[k++] = rm3100StatisSet->sampleData[n];
+        pRm3100StatisSet->sampleData[k].x = pRm3100StatisSet->sampleData[n].x; 
+		pRm3100StatisSet->sampleData[k].y = pRm3100StatisSet->sampleData[n].y;
+		pRm3100StatisSet->sampleData[k].z = pRm3100StatisSet->sampleData[n].z;
+		pRm3100StatisSet->sampleData[k].diffOfRM = pRm3100StatisSet->sampleData[n].diffOfRM;
+		k++;
     }
-    rm3100StatisSet->len = MAX_(rm3100StatisSet->len - 1, 0);
+    pRm3100StatisSet->len = MAX_(pRm3100StatisSet->len - 1, 0);
 }
 
 
 /*
 * 满集处理
 */
-uint8_t BerthPo_DealFullBottomSet(PRM3100_STATISSET rm3100StatisSet)
+uint8_t BerthPo_DealFullBottomSet(PRM3100_STATISSET pRm3100StatisSet)
 {
     uint8_t ret = 0;
     // 计算均值方差
-    BerthPo_CalculateBottomStatisVarianceMean(rm3100StatisSet);
-    if (rm3100StatisSet->var_x <= 4 && rm3100StatisSet->var_y <= 4 &&
-        rm3100StatisSet->var_z <= 4)
+    BerthPo_CalculateBottomStatisVarianceMean(pRm3100StatisSet);
+    if (pRm3100StatisSet->var_x <= 4 && pRm3100StatisSet->var_y <= 4 &&
+        pRm3100StatisSet->var_z <= 4)
     {
         // 清空
-        BerthPo_ZeroStatisSet(rm3100StatisSet);
+        BerthPo_ZeroStatisSet(pRm3100StatisSet);
         ret = 1;
     }
     else
     {
         // 剔除数据
-        BerthPo_DeleteDataStatisSet(rm3100StatisSet);
+        BerthPo_DeleteDataStatisSet(pRm3100StatisSet);
     }
     return ret;
 }
@@ -356,7 +359,7 @@ uint8_t BerthPo_DealFullBottomSet(PRM3100_STATISSET rm3100StatisSet)
 */
 uint8_t BerthPo_BottomTimesAdjustStatisProcess(PRM3100_SAMPLE_DATA
         pRm3100SampleData, PSENSOR_RM3100 pSensorRm3100,
-        PRM3100_MAGNETIC rm3100Magnetic)
+        PRM3100_MAGNETIC pRm3100Magnetic)
 {
 
     // 插入子集
@@ -367,11 +370,11 @@ uint8_t BerthPo_BottomTimesAdjustStatisProcess(PRM3100_SAMPLE_DATA
     {
         if (1 == BerthPo_DealFullBottomSet(&(pSensorRm3100->statisBottomTimesSet)))
         {
-            rm3100Magnetic->state = MAGNETIC_STATE_CONFIRM;
-            rm3100Magnetic->val = pSensorRm3100->statisBottomTimesSet.mean;
-            rm3100Magnetic->x = pSensorRm3100->statisBottomTimesSet.mean_x;
-            rm3100Magnetic->y = pSensorRm3100->statisBottomTimesSet.mean_y;
-            rm3100Magnetic->z = pSensorRm3100->statisBottomTimesSet.mean_z;
+            pRm3100Magnetic->state = MAGNETIC_STATE_CONFIRM;
+            pRm3100Magnetic->val = pSensorRm3100->statisBottomTimesSet.mean;
+            pRm3100Magnetic->x = pSensorRm3100->statisBottomTimesSet.mean_x;
+            pRm3100Magnetic->y = pSensorRm3100->statisBottomTimesSet.mean_y;
+            pRm3100Magnetic->z = pSensorRm3100->statisBottomTimesSet.mean_z;
             return 1;
         }
     }
@@ -454,7 +457,7 @@ uint8_t BerthPo_GetBottomOffsetValue(PSENSOR_RM3100 pSensorRm3100)
 
     uint8_t i = 0;
     uint8_t m_offsetCnt = 0;
-    uint8_t m_offsetSum = 0;
+    uint16_t m_offsetSum = 0;
 
     for (i = 0; i < pSensorRm3100->statisBottomTimesSet.size; i++)
     {

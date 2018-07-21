@@ -8,7 +8,7 @@
 #include "Drivers_LED.h"
 #include "Drivers_RM3100.h"
 #include "BerthPo_Protocol.h"
-
+#include <math.h>
 
 #define MAX_(bit1, bit2)  ((bit1) >= (bit2) ? (bit1) : (bit2))// 最大值
 #define MIN_(bit1, bit2)  ((bit1) <= (bit2) ? (bit1) : (bit2))// 最小值

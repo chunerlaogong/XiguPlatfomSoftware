@@ -24,7 +24,7 @@ typedef struct _InputInfo {
 /*******************变量定义******************/             
 static MAGNETIC_STATE S_gParkState;               // 记录最近一次停车统计状态(用于停车后干扰导致一直无车的情况)
 static SRM3100_EMData S_gNoParkData;              // 记录无车状态最新一组采集值
-
+BERTH_STATE g_parkState = BERTHPO_PARK_STATE_NULL;   //车位状态
 
 /*******************函数定义*****************/
 InputInfo BerthPo_InitBerthStateInput();
