@@ -1,0 +1,21 @@
+#include "BerthPo_NB.h"
+#include "BSP_UART.h"
+
+
+/*******************变量定义结束************/
+/*******************************************************************************
+* Function Name :void BerthPo_UartInit()
+* Description   :初始化NB串口
+* Author        : YJD
+* Input         :
+* Output        :
+* Other         :
+* Date          :2018.05.08
+*******************************************************************************/
+
+void BerthPo_NBUartInit()
+{
+	BSP_UartOpen(COM1, 9600, 8, 1, 0);   //NB串口开启
+}
+
+

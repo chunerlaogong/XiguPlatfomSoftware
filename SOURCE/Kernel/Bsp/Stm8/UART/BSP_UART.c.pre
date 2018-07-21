@@ -1,0 +1,361 @@
+/*
+********************************************************************************
+*
+*                                 BSP_Uart.c
+*
+* File          : BSP_Uart.c
+* Version       : V1.0
+* Author        : Lhl
+* Mode          : Thumb2
+* Toolchain     :
+* Description   : 串口驱动程序
+*
+* History       :
+* Date          : 2018.05.08
+*******************************************************************************/
+#include "stm8l15x_usart.h"
+#include "stm8l15x_clk.h"
+#include "stm8l15x_gpio.h"
+#include "stm8l15x_it.h"
+#include "BSP_UART.h"
+#include "Queue.h"
+#include <stdlib.h>
+
+
+#if COM1_EN
+static uint8_t COM1_RX_BUFF[BSP_COM1_Rx_BUFF_SIZE] = {0};
+static QUEUE8_t COM1_RX_QUEUE = {0};
+#endif
+
+#if COM2_EN
+static uint8_t COM2_RX_BUFF[BSP_COM2_Rx_BUFF_SIZE] = {0};
+static QUEUE8_t COM2_RX_QUEUE = {0};
+#endif
+
+#if COM3_EN
+static uint8_t COM3_RX_BUFF[BSP_COM3_Rx_BUFF_SIZE] = {0};
+static QUEUE8_t COM3_RX_QUEUE = {0};
+#endif
+
+#if COM1_SW_EN
+static uint8_t COM1_SW_RX_BUFF[BSP_COM1_SW_Rx_BUFF_SIZE] = {0};
+static QUEUE8_t COM1_SW_RX_QUEUE = {0};
+#endif
+
+#if COM2_SW_EN
+static uint8_t COM1_SW_RX_BUFF[BSP_COM1_SW_Rx_BUFF_SIZE] = {0};
+static QUEUE8_t COM1_SW_RX_QUEUE = {0};
+#endif
+
+
+static USART_TypeDef* const COM_USART[COMn] =
+{
+#if     COM1_EN
+    BSP_COM1,
+#endif
+#if     COM2_EN
+    BSP_COM2,
+#endif
+#if     COM3_EN
+    BSP_COM3,
+#endif
+#if     COM1_SW_EN
+    BSP_COM1_SW,
+#endif
+#if     COM2_SW_EN
+    BSP_COM2_SW,
+#endif
+
+
+};
+
+static GPIO_TypeDef* const COM_TX_PORT[COMn] =
+{
+#if     COM1_EN
+    BSP_COM1_TX_GPIO_PORT,
+#endif
+#if     COM2_EN
+    BSP_COM2_TX_GPIO_PORT,
+#endif
+#if     COM3_EN
+    BSP_COM3_TX_GPIO_PORT,
+#endif
+#if     COM1_SW_EN
+    BSP_COM1_SW_TX_GPIO_PORT,
+#endif
+#if     COM2_SW_EN
+    BSP_COM1_SW_TX_GPIO_PORT,
+#endif
+
+
+};
+
+static GPIO_TypeDef* const COM_RX_PORT[COMn] =
+{
+#if     COM1_EN
+    BSP_COM1_RX_GPIO_PORT,
+#endif
+#if     COM2_EN
+    BSP_COM2_RX_GPIO_PORT,
+#endif
+#if     COM3_EN
+    BSP_COM3_RX_GPIO_PORT,
+    #if     COM1_SW_EN
+    BSP_COM1_SW_TX_GPIO_PORT,
+#endif
+#if     COM2_SW_EN
+    BSP_COM1_SW_TX_GPIO_PORT,
+#endif
+};
+
+static const uint32_t COM_USART_CLK[COMn] =
+{
+#if     COM1_EN
+    BSP_COM1_CLK,
+#endif
+#if     COM2_EN
+    BSP_COM2_CLK,
+#endif
+#if     COM3_EN
+    BSP_COM3_CLK,
+#endif
+};
+
+
+static const uint16_t COM_TX_PIN[COMn] =
+{
+#if     COM1_EN
+    BSP_COM1_TX_PIN,
+#endif
+#if     COM2_EN
+    BSP_COM2_TX_PIN,
+#endif
+#if     COM3_EN
+    BSP_COM3_TX_PIN,
+#endif
+};
+
+static const uint16_t COM_RX_PIN[COMn] =
+{
+#if     COM1_EN
+    BSP_COM1_RX_PIN,
+#endif
+#if     COM2_EN
+    BSP_COM2_RX_PIN,
+#endif
+#if     COM3_EN
+    BSP_COM3_RX_PIN,
+#endif
+};
+
+static uint8_t * const COM_RX_BUFF[COMn] =
+{
+#if     COM1_EN
+    COM1_RX_BUFF,
+#endif
+#if     COM2_EN
+    COM2_RX_BUFF,
+#endif
+#if     COM3_EN
+    COM3_RX_BUFF,
+#endif
+};
+
+static const uint32_t COM_RX_BUFF_SIZE[COMn] =
+{
+#if     COM1_EN
+    BSP_COM1_Rx_BUFF_SIZE,
+#endif
+#if     COM2_EN
+    BSP_COM2_Rx_BUFF_SIZE,
+#endif
+#if     COM3_EN
+    BSP_COM3_Rx_BUFF_SIZE,
+#endif
+};
+
+static QUEUE8_t * const COM_RX_QUEUE[COMn] =
+{
+#if     COM1_EN
+    &COM1_RX_QUEUE,
+#endif
+#if     COM2_EN
+    &COM2_RX_QUEUE,
+#endif
+#if     COM3_EN
+    &COM3_RX_QUEUE,
+#endif
+};
+
+static const uint16_t parityArr[3] = {USART_Parity_No, USART_Parity_Odd, USART_Parity_Even};
+
+/*系统printf函数实现*/
+int putchar(int c)
+{
+    if('\n' == (char)c)
+    {
+        USART_SendData8(USART1, '\r');
+        while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
+    }
+    USART_SendData8(USART1, c);
+    while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
+
+    return (c);
+}
+
+
+/*******************************************************************************
+* Function Name :BSP_UartOpen
+* Description   :串口及引脚初始化
+* Input         :Uartx:COM1,COM2,COM3
+                 Baud:2400,4800,9600,115200
+                 data:数据位数 8,9
+                 Stop:停止位数 1,2
+                 parity:校验 0:无校验，1:奇校验，2:偶校验
+* Output        :
+* Other         :
+* Date          :2018.05.08
+*******************************************************************************/
+void BSP_UartOpen(uint8_t COM,  uint32_t baud, uint8_t data, uint8_t stop,
+                  uint8_t parity)
+{
+    USART_WordLength_TypeDef USART_WordLength;
+    USART_StopBits_TypeDef USART_StopBits;
+    USART_Parity_TypeDef USART_Parity;
+    /* Enable UART clock */
+    CLK_PeripheralClockConfig((CLK_Peripheral_TypeDef )BSP_COM_CLK[COM], ENABLE);
+    USART_DeInit(COM_USART[COM]);
+    /* Configure USART Tx as alternate function push-pull */
+    GPIO_ExternalPullUpConfig(COM_TX_PORT[COM], COM_TX_PIN[COM], ENABLE);
+    /* Configure USART Rx as input floating */
+    GPIO_Init(COM_RX_PORT[COM], COM_RX_PIN[COM], GPIO_Mode_In_PU_No_IT);
+    if(COM == 0)
+    {
+        SYSCFG_REMAPPinConfig(REMAP_Pin_USART1TxRxPortA, ENABLE);
+    }
+    /* USART configuration */
+    USART_StopBits = (stop == 2) ? USART_StopBits_2 : USART_StopBits_1;
+    USART_WordLength = (data == 9) ? USART_WordLength_9b : USART_WordLength_8b;
+    USART_Parity = (parity < 3) ? parityArr[parity] : USART_Parity_No;
+    USART_Init(COM_USART[COM], baud, (USART_WordLength_TypeDef )USART_WordLength,
+               (USART_StopBits_TypeDef )USART_StopBits, (USART_Parity_TypeDef )USART_Parity,
+               (USART_Mode_TypeDef )USART_Mode_Rx | USART_Mode_Tx);
+    USART_ITConfig(COM_USART[COM], USART_IT_RXNE, ENABLE);
+    USART_ITConfig(COM_USART[COM], USART_IT_IDLE,
+                   ENABLE);   //使能串口空闲中断，接收一帧完成时产生中断
+    USART_ITConfig(COM_USART[COM], USART_IT_TC, DISABLE);//关闭串口发送完成中断
+    if(COM == 1)
+    {
+        SYSCFG_REMAPPinConfig(REMAP_Pin_USART1TxRxPortA, ENABLE);
+    }
+    /* Enable USART */
+    USART_Cmd(COM_USART[COM], ENABLE);
+
+    QUEUE_PacketCreate(COM_RX_QUEUE[COM], COM_RX_BUFF[COM], COM_RX_BUFF_SIZE[COM]);
+
+}
+
+/*******************************************************************************
+* Function Name : uint32_t BSP_UartRead(uint8_t COMx, uint8_t *buffter, uint32_t len)
+* Description   : 串口读出数据
+* Input         : COMx:通道X
+* Output        :
+* Other         :
+* Date          : 2013.07.22
+*******************************************************************************/
+uint32_t BSP_UartRead(uint8_t COM, uint8_t *buffter, uint32_t len)
+{
+    return QUEUE_PacketOut(COM_RX_QUEUE[COM], buffter, len);
+}
+
+/*******************************************************************************
+* Function Name : void BSP_UartWrite(uint8_t COMx, uint8_t *buffter)
+* Description   : 串口发出数据
+* Input         : COMx:通道X
+* Output        :
+* Other         :
+* Date          : 2013.07.22
+*******************************************************************************/
+void BSP_UartSendByte(uint8_t COM, uint8_t Data)
+{
+    USART_SendData8(COM_USART[COM], Data);
+    /* 等待传输结束 */
+    while((COM_USART[COM]->SR & 0x80) ==
+          0x00);//查询发送缓冲区的字节是否已经发送出去
+}
+
+void BSP_UartSendBytes(uint8_t COM, uint8_t *buffter)
+{
+    if(buffter == NULL)
+    {
+        return ;
+    }
+    while(*buffter != '\0')
+    {
+        BSP_UartSendByte(COM, *buffter++);    /* 循环调用发送一个字符函数 */
+    }
+}
+void BSP_UartSendBytesLen(uint8_t COM, uint8_t *buffter , uint8_t len)//适用于发送数据中包含大量0x00
+{
+    if(buffter == NULL)
+    {
+      return ;
+    }
+
+    while(len)
+    {
+      BSP_UartSendByte(COM , *buffter++);	/* 循环调用发送一个字符函数 */
+      len--;
+    }	
+}
+
+/*******************************************************************************
+* Function Name : void _RXIRQHandler(uint8_t COM)
+* Description   :
+* Input         :
+* Output        :
+* Other         :
+* Date          : 2013.08.23
+*******************************************************************************/
+void _RXIRQHandler(uint8_t COM)
+{
+    volatile unsigned char clear;
+    if (USART_GetITStatus(COM_USART[COM], USART_IT_RXNE) != RESET)
+    {
+        unsigned char ch = COM_USART[COM]->DR;
+        QUEUE_PacketIn(COM_RX_QUEUE[COM], &ch, 1);
+    }
+    else if (USART_GetITStatus(COM_USART[COM], USART_IT_IDLE) != RESET)
+    {
+        clear = COM_USART[COM]->SR;
+        clear = COM_USART[COM]->DR;
+    }
+}
+/**
+  * @brief USART1 RX / Timer5 Capture/Compare Interrupt routine.
+  * @param  None
+  * @retval None
+  */
+INTERRUPT_HANDLER(USART1_RX_TIM5_CC_IRQHandler, 28)
+{
+    /* In order to detect unexpected events during development,
+       it is recommended to set a breakpoint on the following instruction.
+    */
+    _RXIRQHandler(COM1);
+}
+
+INTERRUPT_HANDLER(TIM2_CC_USART2_RX_IRQHandler, 20)
+{
+    /* In order to detect unexpected events during development,
+       it is recommended to set a breakpoint on the following instruction.
+    */
+    _RXIRQHandler(COM2);
+}
+
+
+
+
+
+
+
+

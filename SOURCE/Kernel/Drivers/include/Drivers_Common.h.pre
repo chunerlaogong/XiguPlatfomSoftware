@@ -1,0 +1,414 @@
+#ifndef _DRIVERS_COMMON_H_
+#define _DRIVERS_COMMON_H_
+
+/**************宏定义*********************/
+#define RfReciBufferSize    40
+#define TxReciBufferSize    40
+
+/*************结构体定义******************/
+
+typedef struct EMData
+{
+    signed short  data_x;
+    signed short  data_y;
+    signed short  data_z;
+} *PEMData, SEMData;
+typedef struct EMAngle
+{
+    float  Angle_X;
+    float  Angle_Z;
+} *PEMAngle, SEMAngle;
+typedef struct EMTemp
+{
+    long   moducles;
+    float  Angle_x;
+    float  Angle_z;
+} *PEMTemp, SEMTemp;
+typedef struct EMInData
+{
+    int  data_x;
+    int  data_y;
+    int  data_z;
+    int  data_Rhall;
+} *PEMInData, SEMInData;
+typedef union EMInBuffData
+{
+    SEMInData BaseModify[8];
+    unsigned long AbsValueOfModule[16];
+}*pEMInBuffData, sEMInBuffData;
+typedef struct GeomagneticJudge
+{
+    unsigned char count;
+    unsigned char judgeStart;
+    unsigned long Module_Value;
+    sEMInBuffData BaseOfModify;
+} *pGeomagneticJudge, sGeomagneticJudge;
+
+typedef struct Alarmadc
+{
+    unsigned char AlarmAdcFlag;
+    unsigned int  Alarm_modulus;  //信号强度报警系数
+    unsigned int  Alarm_Bottom;   //信号强度报警底线
+    unsigned int  Alarm_Value;
+    unsigned int  Alarm_Threshold;
+
+} *PAlarmadc, SAlarmadc;
+typedef struct AlarmParam
+{
+
+    unsigned int  sensor_Valid;
+    SAlarmadc     AlarmAdc[2];
+    unsigned  int temperature;
+    unsigned  int rsv;
+} *PAlarmParam, SAlarmParam;
+
+typedef struct SetTagcodeVoidTimer
+{
+    unsigned char  CodeSet;
+    unsigned int   codeVoidTimer;
+
+} *PsetcodeVoidTimer, SsetcodeVoidTimer;
+typedef struct OpenTagWCM
+{
+    unsigned char codeCodeOpenFlag;
+    unsigned char CodeOpen_start;
+    unsigned int  CodeOpenTimer;
+} *PopenCode, SopenCode;
+typedef struct Mtstbuff
+{
+    unsigned long Rstrength;
+    float angle_z;
+} *Ptstbuff, Ststbuff;
+
+typedef struct Marrow
+{
+    short data_x;
+    short data_y;
+    short data_z;
+} *Parrow, Sarrow;
+
+typedef struct positionPower
+{
+
+
+    unsigned char SendPositionCount;
+    unsigned int  Start_Position;
+    unsigned int  End_Position;
+    unsigned int  Start_PositionCount;
+    unsigned int  End_PositionCount;
+    unsigned char flag;
+    unsigned int  PowerSelectFlag;
+    unsigned char PackageCount[16];
+} *PpositionPower, SpositionPower;
+
+
+
+typedef struct Controler_cnfig
+{
+    unsigned char Tag_id_nub[3];
+    unsigned char remot_power;  //发射功率
+    unsigned char reci_sensity;//接收灵敏度
+    unsigned char WorkMode;
+    unsigned char Colision_Mode;
+    unsigned char remot_PN_code;
+    unsigned int  UserCode;
+
+    unsigned char remot_0channel;
+    unsigned char remot_1channel;
+    unsigned char remot_2channel;
+    unsigned char remot_3channel;
+    unsigned char remot_4channel;
+    unsigned char remot_5channel;
+    unsigned char remot_6channel;
+    unsigned char remot_7channel;
+
+
+    unsigned char chanel_temp;
+
+    unsigned char remot_PN_adress[8];
+    unsigned char remot_DATA_pn_addr[16];
+    unsigned char remot_pream_code;
+    unsigned char remot_pream_addr[3];
+    unsigned char remot_data_ratio;
+
+    unsigned char Uart0bard;
+    unsigned char RF0bard;    //RF0波特率
+    unsigned char RFReciTDelay;//RF接收延时
+
+    unsigned char FRAMe_Cfg_ADR;
+    unsigned char DoneSleep;  //进入sleep
+    unsigned char CoveryCnt;
+    unsigned char RFiniFlag;
+    unsigned char  IntFlag;
+    unsigned char  LEDFlag;//led开关标志，取系统灯配置
+
+    unsigned char  SendCount;//发送计数
+    unsigned char remot_0channel_temp;
+    unsigned char  remot_PN_Constcode;
+    unsigned char remot_pream_Constcode;
+    unsigned char remot_powerBack;  //发射功率
+    unsigned char reci_sensityBack;  //接收灵敏度
+    unsigned char channel1_rateBack; //通道1频率
+
+
+} *PnodeConfig, SnodeConfig;
+
+typedef struct Data_config
+{
+    unsigned char DataCount;
+    unsigned char UserData[64];
+} *PdataConfig, SdataConfig;
+typedef struct SavPosition
+{
+    unsigned char  CountOfSend;
+    unsigned char  NewPosTmsFlag;
+    unsigned char  Cmd;
+    unsigned char  Cmdmode;
+    unsigned char  Channel;
+    unsigned char  Power;
+    unsigned int   NewPosTmsCount;
+    unsigned int   NewPosTmsTotal;
+    unsigned char  NewPosSendCount;
+    unsigned char  NewPosSendTotal;
+    unsigned char  VolidPageMax;
+    unsigned char  WriterId[3];
+} *Pparaposition, Sparaposition;
+
+typedef struct Sensor3100
+{
+    signed short  EMData_x;
+    signed short  EMData_y;
+    signed short  EMData_z;
+    signed long diffOfRM;
+}*PSensor3100, SSensor3100;
+
+
+typedef struct  paraConfig
+{
+    unsigned char ParaTransMitFlag; //参数发送标志
+    unsigned char ParaRecieveFlag;//参数接收标志
+
+    unsigned char ParaIntFlag;//参数初始化标志
+
+    unsigned int   WorkInterval;//发射间隔
+    unsigned char  WorkInt_Timers;//发送次数
+    unsigned char  WorkInt_Timers_count;////
+    unsigned int  listenInterval; //
+    unsigned int  listenITLCount; //
+    unsigned char WdtInterval; //wdt固定睡眠时间，
+    unsigned char FastRouseAlarm; //多次快速唤醒报警标志
+    unsigned char FastRouse; //wdt快速唤醒标志，，
+    unsigned char FastRouCount; //wdt快速唤醒标志，，
+    unsigned char
+    HeartbeatInterval; //心跳间隔时间，1-5-->10-50秒（间隔10秒），6-10-->1--5分（间隔1分），11-15-->10分--30分（间隔5分）
+    unsigned char SendHandToHandSetFlag;//移动设备激活后回应标志
+
+    unsigned char serial_Interval;//
+    unsigned char  CollisonInterval;//
+    unsigned long Id_temp_rlc;
+    unsigned char Watch_timerOfcollision;
+    unsigned char Rssi_bottom;
+    unsigned int  WaitRspTimerConst;
+
+    unsigned int AlarmValid;
+    unsigned int AlarmStatus;
+    unsigned char Device_Wait;
+
+    unsigned char sampleTimes;//采样次数
+    unsigned char DataBlockLens;        //
+    unsigned int  BolckNumb;    //
+    unsigned int  tempComp;
+    unsigned int  tempOver;
+    unsigned int  GetAckDls;
+    unsigned int  WaitCmd;
+
+    unsigned char PanDianCmdHandleRightFlag;
+    unsigned long WdtPanDianCmdSleepTime;
+    unsigned long WdtCurSleepTime;
+    unsigned char CollisionSleepTimeOffSet;
+    unsigned long CollisonTimeCount;
+    unsigned long CollisonTimeConst;
+
+    unsigned char HMCOutFlag;//等待地磁操作退出标志，0--退出，1--继续等待
+    unsigned char GetEMBottomFlag;//取本底成功标志
+    unsigned char GetEMBottom_RFFlag;//地磁工作标志
+
+    signed int GetEMBottom_RFModThreshold;//磁场强度灵敏度
+    signed int GetEMBottom_RFAngleThreshold;//磁场偏转角度灵敏度
+
+    signed short EMData_xBottom;//x轴强度本底
+    signed short EMData_yBottom;//y轴强度本底
+    signed short EMData_zBottom;//z轴强度本底
+    signed int EMData_xyz_AbsValue_Module_Bottom;//xyz轴变化模值本底
+    signed int EMData_RMS;
+    signed int EMData_xRMS;
+    signed int EMData_zRMS;
+
+} *PparaConfig, SparaConfig;
+
+//升级参数结构
+typedef  struct AttrOfTag
+{
+    unsigned char        flag;      //flag 置1
+    unsigned char        channel;  //RF 通道
+    unsigned char        type;   //类型 0-读写器，1-基站，2-中继，3-标签
+    unsigned char        power;    //发射功率
+    unsigned char        pn;       //pn码
+    unsigned char        mode;     //工作模式 （ 0-主动，1-被动，2-升级）
+    unsigned char        reserved[2];
+    unsigned long        paramAddr;      //设备存储区地址
+    unsigned long        jumpAddr;      //app区地址
+    unsigned long        groupId;  //组ID
+    unsigned long        deviceId; //设备ID
+
+    unsigned long        ver;      //版本号
+    unsigned long        updateGroupId;      //对应升级手持机的
+    unsigned long        updateId;      //对应升级手持机的
+
+
+}*pAttrOfTag, sAttrOfTag;
+
+typedef struct User_config
+{
+    unsigned char  Tag_Remove;
+
+
+} *Puser_config, Suser_config;
+
+typedef struct qswriterNumb
+{
+    unsigned long   NullNub;
+    unsigned char  writerNumb0_[3];
+    unsigned char  writerNumb1_[3];
+    unsigned char  writerNumb2_[3];
+
+} *PwriterNumb, SwriterNumb;
+typedef struct OperateControl
+{
+    SsetcodeVoidTimer   PassWordValidTime[8];
+    unsigned char ValidDataAreaStartNo[8];
+    unsigned char ValidDataAreaEndNo[8];
+    unsigned int  PerAreaDataBlockNum[8];            //用户区数据块个数
+    unsigned char WriteParmEnFlag;
+    unsigned char WritePassWordParmEnFlag;
+    unsigned char WriteDataEnFlag;
+    unsigned char CurPassWord;
+    unsigned char CurValidDataAreaStartNo;
+    unsigned char CurValidDataAreaEndNo;
+    unsigned char CurPassWordAreaNo;
+    unsigned long  PassWordValidTimeCount;
+    unsigned long  PassWordValidTimeConst;
+    unsigned char  PassWordTimeOutCountStartFlag;
+    unsigned char  PassWordTimeOutFlag;
+    unsigned char  AllowOperateFlag;
+    unsigned char  LoginInSucessFlag;
+    unsigned char  PassWordEnFlag;
+} *PoperateControl, SoperateControl;
+
+typedef struct ABSOfVector
+{
+    signed short  diffOfRM;
+} *ppOfVector, ABScharOfVector;
+typedef struct angleOfVector
+{
+    signed short angleOfVector_x;
+    signed short angleOfVector_y;
+    signed short angleOfVector_z;
+    long ModOfVector;
+} *PangleOfVector, SangleOfVector;
+typedef struct SystemStatus
+{
+    unsigned char SREGTemp;
+    unsigned char PRRTemp;
+    unsigned char TIMSK1Temp;
+    unsigned char RfRecSucessFlag;
+    unsigned char RfSendSucessFlag;
+    unsigned char RfRecAckSucessFlag;
+    unsigned char RfSendAckSucessFlag;
+    unsigned char CmdHandleSucessFlag;
+
+} *PsystemStatus, SsystemStatus;
+
+typedef struct Controler_config
+{
+    unsigned char ini_sign[3];
+    SnodeConfig   TagNode;
+    SparaConfig   TagPara;
+
+    SdataConfig   TagData;
+    SoperateControl TagOperateControl;
+
+} *PcontrolerConfig, ScontrolerConfig;
+
+
+
+typedef struct Position
+{
+    unsigned char  Cmd;
+    unsigned char  Cmdmode;
+    unsigned char  Channel;
+    unsigned char  Power;
+    unsigned int   SerialCount;
+    unsigned int   SerialTotal;
+    unsigned char  VolidPageMax;
+} *Pposition, Sposition;
+typedef struct PosOfPara
+{
+    unsigned char  TagId[3];
+    unsigned char  SendPower;
+    unsigned char   reciRssi;
+} *PPosOfPara, SPosOfPara;
+
+
+typedef struct PosOfresult
+{
+    unsigned char  MOdeofPos;
+    unsigned char  TagNum;
+    SPosOfPara     PosOfTagPara[10];
+
+} *PPosOfresult, SPosOfresult;
+typedef struct TestTimer1
+{
+    unsigned char  NUmb;
+    unsigned int  Timer;
+    unsigned int  TimerSave[2];
+    unsigned int SerialCount;
+    unsigned int SerialTotal;
+} *PTestTimer1, STestTimer1;
+
+
+
+typedef struct Controler_Symple
+{
+    ScontrolerConfig  Config;
+    unsigned char rfReci[RfReciBufferSize];       //RfReciPackage
+    unsigned char txReci[RfReciBufferSize];       //RfSendPackage
+
+    unsigned char recifinish;
+    unsigned char reci_Ok;
+    unsigned char IssStrenth;
+    unsigned char reciLength;
+} *Pcontroler_Symple, Sontroler_Symple;
+
+
+typedef struct Frame_ctrlArea       //帧控制5byte
+{
+    unsigned int   UserCode;      //
+    unsigned char  Frame_ctrl;    //
+    unsigned char  FrameLens;         //
+    unsigned char  Pas_mima;          //加密控制1byte
+    unsigned char  text[100];         //
+    //帧体(≤233 byte)=帧属性+命令码+后续参数
+} *Pframe_ctrlArea, Sframe_ctrlArea;
+	typedef struct Frame_datArea	
+				  {
+				  unsigned int	 UserCode;		
+				  unsigned char  Frame_ctrl;
+				  unsigned char   FrameLens;
+					 unsigned char	Pas_mima;
+				  unsigned char  text[100];
+				   } *Pframe_DataArea, Sframe_DataArea;
+
+
+#endif   //_DRIVERS_COMMON_H_
+

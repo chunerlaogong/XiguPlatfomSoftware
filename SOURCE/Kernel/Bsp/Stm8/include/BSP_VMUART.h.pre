@@ -1,0 +1,131 @@
+#ifndef _BSP_VM_UART_H_
+#define _BSP_VM_UART_H_
+
+#include "stm8l15x.h"
+#include "Queue.h"
+#define COM1_SW_EN 1;
+#define COM2_SW_EN 1;
+
+typedef struct
+{
+    uint8_t status;            //记录串口的工作状态
+    uint8_t startRxFlag;       //开始接收标志
+    uint8_t startSendFlag ;    //开始发送标志
+    uint32_t baudRate;         //串口的波特率
+    uint8_t isRead;        //记录数据是否已经取出
+    uint8_t isSend;        //记录写入的数据是否已经发送
+    uint8_t bitSended;     //记录串口已经发送完的数据位个数
+    uint8_t bitRecved;     //记录串口已经接收到的数据位个数
+    uint8_t sendData;      //发送数据缓冲区
+    uint8_t recvData;      //接收数据缓冲区
+}EMUART_STRUCT;
+//默认模拟串口1使用timer1,模拟串口2使用timer2，主频使用8M 如果要修改，需修改定时器分频，
+typedef struct UART_struct   
+{
+	EMUART_STRUCT  EMUART_PARAM;       //串口收发数据参数
+    uint8_t       SYS_CLK;             //系统主频时钟大小
+    QUEUE8_t* const COM_RX_QUEUE;      //模拟串口接收缓冲区队列
+	QUEUE8_t* const COM_TX_QUEUE;      //模拟串口发送缓冲区队列
+	void (*VmUartInit)(void);
+	void (*VmUartSendByte)(uint8_t data);
+	void (*VmUartSendBytes(uint8_t* buffer);
+} SW_UART_TypeDef;
+
+typedef enum {
+#if     COM1_SW_EN
+        COM1_SW,
+#endif
+#if     COM2_SW_EN
+        COM2_SW,
+#endif
+    COM_MAX
+}COM_SW_PORT;
+#define COMn    COM_MAX
+static SW_UART_TypeDef sSwUart[COMn] =
+{
+#if     COM1_SW_EN
+{	
+    .VmUartInit     = BSP_VmUartInit,
+	.VmUartSendByte = BSP_VmUartSendBytes,
+	.VmUartSendBytes= BSP_VmUartSendByte,
+},
+#endif
+#if     COM2_SW_EN
+{
+	.VmUartInit     = BSP_VmUartInit,
+	.VmUartSendByte = BSP_VmUartSendBytes,
+	.VmUartSendBytes= BSP_VmUartSendByte;
+}    
+#endif
+};
+typedef enum {
+    eCOM1_SW_Rx = 0,
+	eCOM1_SW_Tx,
+	eCOM2_SW_Rx,
+	eCOM2_SW_Tx,
+	eGPIO_MAX_COUNT
+}GPIO_COM_SW_ENUM_t;
+static PORT_INFO_t g_SwUartPortInfo[eGPIO_MAX_COUNT] =
+{
+#if COM1_SW_EN
+    {GPIOB,  GPIO_Pin_1,     3,     eCOM1_SW_Rx},
+    {GPIOB,  GPIO_Pin_0,     3,     eCOM1_SW_Tx},
+#endif
+#if COM2_SW_EN
+    {GPIOB,  GPIO_Pin_0,     3,     eCOM2_SW_Rx},
+    {GPIOB,  GPIO_Pin_1,     3,     eCOM2_SW_Tx},
+#endif
+};
+static uint8_t * const COM_SW_RX_BUFF[COMn] =
+{
+#if     COM1_SW_EN
+    COM1_SW_RX_BUFF,
+#endif
+#if     COM2_SW_EN
+    COM1_SW_RX_BUFF,
+#endif
+
+};
+
+static const uint32_t COM_RX_BUFF_SIZE[COMn] =
+{
+#if     COM1_SW_EN
+    COM1_SW_RX_BUFF_SIZE,
+#endif
+#if     COM2_SW_EN
+    COM2_SW_RX_BUFF_SIZE,
+#endif
+};
+#if COM1_SW_EN
+#define COM1_SW_RX_BUFF_SIZE               128
+static uint8_t COM1_SW_RX_BUFF[COM1_SW_RX_BUFF_SIZE] = {0};
+#endif
+#if COM2_SW_EN
+#define COM2_SW_RX_BUFF_SIZE               128
+static uint8_t COM2_SW_RX_BUFF[COM2_SW_RX_BUFF_SIZE] = {0};
+#endif
+
+//设置GPIO为输入
+#if COM1_SW_EN
+#define	COM1_SW_RXD_PORT_IN       g_SwUartPortInfo[eCOM1_SW_Rx].port->DDR &= ~(g_SwUartPortInfo[eCOM1_SW_Rx].pin);\
+	                              g_SwUartPortInfo[eCOM1_SW_Rx].port->CR1 |= (g_SwUartPortInfo[eCOM1_SW_Rx].pin);\
+	                              g_SwUartPortInfo[eCOM1_SW_Rx].port->CR2 &=  (~g_SwUartPortInfo[eCOM1_SW_Rx].pin)    
+//设置为中断输入 	                                   
+#define	COM1_SW_RXD_PORT_INT_IN    g_SwUartPortInfo[eCOM1_SW_Rx]->DDR &= ~(g_SwUartPortInfo[eCOM1_SW_Rx].pin]);\
+	                               g_SwUartPortInfo[eCOM1_SW_Rx]->CR1 |= (g_SwUartPortInfo[eCOM1_SW_Rx].pin); \
+	                               g_SwUartPortInfo[eCOM1_SW_Rx]->CR2 |=  (g_SwUartPortInfo[eCOM1_SW_Rx].pin)
+#endif
+
+#if COM2_SW_EN
+#define	COM2_SW_RXD_PORT_IN       g_SwUartPortInfo[eCOM1_SW_Rx].port->DDR &= ~(g_SwUartPortInfo[eCOM1_SW_Rx].pin);\
+	                              g_SwUartPortInfo[eCOM1_SW_Rx].port->CR1 |= (g_SwUartPortInfo[eCOM1_SW_Rx].pin);\
+	                              g_SwUartPortInfo[eCOM1_SW_Rx].port->CR2 &=  (~g_SwUartPortInfo[eCOM1_SW_Rx].pin)    
+//设置为中断输入 	                                   
+#define	COM2_SW_RXD_PORT_INT_IN    g_SwUartPortInfo[eCOM1_SW_Rx]->DDR &= ~(g_SwUartPortInfo[eCOM1_SW_Rx].pin]);\
+	                               g_SwUartPortInfo[eCOM1_SW_Rx]->CR1 |= (g_SwUartPortInfo[eCOM1_SW_Rx].pin); \
+	                               g_SwUartPortInfo[eCOM1_SW_Rx]->CR2 |=  (g_SwUartPortInfo[eCOM1_SW_Rx].pin)
+#endif
+/******************函数声明******************/
+void BSP_VmUartSendByte(uint8_t data);
+void BSP_VmUartSendBytes(uint8_t* buffer);
+#endif    //_BSP_VM_UART_H_

@@ -1,0 +1,46 @@
+#include "BSP_TIM.h"
+#include <stm8l15x_conf.h>
+
+/*******************************************************************************
+* Function Name : void BSP_TIM4Config(void)
+* Description   : 配置定时器4，作为调试串口发送
+* Author        : YJD
+* Input         : NULL
+* Output        : NULL
+* Other         : NULL
+* Date          : 2018.06.21
+*******************************************************************************/
+
+void BSP_TIM4Config(void)
+{
+    CLK_PeripheralClockConfig(CLK_Peripheral_TIM4, ENABLE);
+    //TIM4_TimeBaseInit(TIM4_Prescaler_16, 1*85);         //16M-104us中断一次 (1/(16M / 128))*125 = 1ms
+    TIM4_TimeBaseInit(TIM4_Prescaler_8, 1 * 70);            //4M-104us中断一次
+    TIM4_ClearFlag(TIM4_FLAG_Update);
+    TIM4_ITConfig(TIM4_IT_Update, ENABLE);
+}
+
+/*******************************************************************************
+* Function Name : void BSP_TIM4Config(void)
+* Description   : 配置定时器4，作为调试串口发送
+* Author        : YJD
+* Input         : NULL
+* Output        : NULL
+* Other         : NULL
+* Date          : 2018.06.21
+*******************************************************************************/
+void BSP_TIM1Config(void)
+{
+    TIM1_TimeBaseInit(15,TIM1_COUNTERMODE_UP,1000,0);
+TIM1_ARRPreloadConfig(ENABLE);//使能自动重装
+TIM1_ITConfig(TIM1_IT_UPDATE , ENABLE);//数据更新中断
+TIM1_Cmd(ENABLE);//开定时器
+}
+
+
+
+
+
+
+
+

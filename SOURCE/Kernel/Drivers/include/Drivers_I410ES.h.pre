@@ -1,0 +1,81 @@
+#ifndef _DRIVERS_I410ES_H_
+#define _DRIVERS_I410ES_H_
+#include <stm8l15x.h>
+#include "Queue.h"
+#include "BSP_UART.h"
+#define BT_SW_UART 0   //使用模拟串口
+#define NO_BACK               0
+#define BACK_OK               1
+#define BACK_ERROR            2
+#define BACK_TIMEOUT          3
+#define NEW_MESSAGE           4
+
+
+//变量定义
+static SBSP_UART_CFG_TypeDef S_BSP_UART_CONFIG;
+typedef enum    //蓝牙状态标志定义
+{
+    INIT_READY = 0,
+    ADVERTISING = 1,
+    CONNECTED = 2,
+    DISCONNECTED = 3,
+    STANDBY = 4,
+    CENTRAL_SCAN = 5,
+    CENTRAL_CON = 6,
+    CENTRAL_DISCON = 7
+} BT_I410ES_MODE_STATUS;
+typedef struct
+{
+    GPIO_TypeDef *BT_POWER_GPIO_BASE;       //蓝牙模块电源管脚GPIO
+    uint8_t       BT_POWER_GPIO_Pin;        //蓝牙模块电源管脚GPIO Pin
+}*PBT_I410ES_GPIO_TypeDef, SBT_I410ES_GPIO_TypeDef;
+
+typedef struct
+{
+    void (*BT_I410ES_PowerOn)(PBT_I410ES_GPIO_TypeDef
+                              pBT_I410ES_GPIO);      //BT_I410ES 使能
+    void (*BT_I410ES_PowerOff)(PBT_I410ES_GPIO_TypeDef
+                               pBT_I410ES_GPIO);     //BT_I410ES 关闭
+    void (*BT_I410ES_DeepSleep)(PBT_I410ES_GPIO_TypeDef
+                                pBT_I410ES_GPIO);    //BT_I410ES 深度休眠,相关IO口设置为高阻态
+    void (*BT_I410ES_Wake)(PBT_I410ES_GPIO_TypeDef
+                           pBT_I410ES_GPIO);         //BT_I410ES 唤醒, 使能相关IO口
+                          void (*BT_I410ES_Wake)(PBT_I410ES_GPIO_TypeDef
+                           pBT_I410ES_GPIO);         //BT_I410ES 唤醒, 使能相关IO口
+                           void (*BT_I410ES_Wake)(PBT_I410ES_GPIO_TypeDef
+                           pBT_I410ES_GPIO);         //BT_I410ES 唤醒, 使能相关IO口
+} BT_I410ES_OPERATION_TypeDef;
+
+void Drivers_BTI410ESPowerOn(PBT_I410ES_GPIO_TypeDef pBT_I410ES_GPIO);
+void Drivers_BTI410ESPowerOff(PBT_I410ES_GPIO_TypeDef pBT_I410ES_GPIO);
+void Drives_BTI410ESDeepSleep(PBT_I410ES_GPIO_TypeDef pBT_I410ES_GPIO);
+void Drivers_BTI410ESWakeUp(PBT_I410ES_GPIO_TypeDef pBT_I410ES_GPIO);
+void Drivers_BTI410ESRead(uint8_t *readBuf);
+void Drivers_BTI410ESWrite(uint8_t *sendBuf);
+static const BT_I410ES_OPERATION_TypeDef BT_I410ES_Operation =
+{
+    .BT_I410ES_PowerOn = Drivers_BTI410ESPowerOn,
+    .BT_I410ES_PowerOff = Drivers_BTI410ESPowerOff,
+    .BT_I410ES_DeepSleep = Drives_BTI410ESDeepSleep,
+    .BT_I410ES_Wake = Drivers_BTI410ESWakeUp,
+    .BT_I410ES_Read =  Drivers_BTI410ESRead,
+    .BT_I410ES_Write = Drivers_BTI410ESWrite,
+};
+//设置BT_I410ES 使能控制管脚为输出状态
+//使能蓝牙
+#define BT_I410ES_PWR_ON(pBT_I410ES_GPIO) \
+                       pBT_I410ES_GPIO->BT_POWER_GPIO_BASE->DDR |= pBT_I410ES_GPIO->BT_POWER_GPIO_Pin; \
+                       pBT_I410ES_GPIO->BT_POWER_GPIO_BASE->ODR |= pBT_I410ES_GPIO->BT_POWER_GPIO_Pin;\
+                       pBT_I410ES_GPIO->BT_POWER_GPIO_BASE->CR1 |= pBT_I410ES_GPIO->BT_POWER_GPIO_Pin
+//关闭蓝牙
+#define BT_I410ES_PWR_OFF(pBT_I410ES_GPIO) \
+                       pBT_I410ES_GPIO->BT_POWER_GPIO_BASE->ODR &= (~(pBT_I410ES_GPIO->BT_POWER_GPIO_Pin))
+
+//关闭串口BT_UART_TX
+#define BT_I410ES_UART_TX_OFF\
+                       S_BSP_UART_CONFIG.UART_TX_GPIO_BASE->DDR &= (~(S_BSP_UART_CONFIG.UART_TX_GPIO_Pin))
+
+//使能串口BT_UART_RX
+#define BT_I410ES_UART_RX_OFF\
+                       S_BSP_UART_CONFIG.UART_RX_GPIO_BASE->DDR &= (~(S_BSP_UART_CONFIG.UART_RX_GPIO_Pin))
+#endif   //_DRIVERS_I410ES_H_
