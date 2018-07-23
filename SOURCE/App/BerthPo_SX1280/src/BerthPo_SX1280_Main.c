@@ -22,30 +22,35 @@ int main()
 {
     disableInterrupts();               //关全局中断
     BerthPo_InitMcu();                 //初始化泊位宝MCU
-    enableInterrupts();
     BerthPo_InitSysParam();
     enableInterrupts();
-    GPIOD->DDR |=  GPIO_Pin_7;
-    GPIOD->ODR |=  GPIO_Pin_7;
-    DelayMs(100);
-    GPIOD->ODR &=  ~GPIO_Pin_7;
 #if SX1280_TEST_MODE
-    uint8_t m_SX1280TestData[9] = {1, 2, 3, 4, 5, 6, 7, 8};
+    uint8_t m_SX1280TestData[9] = {2, 3, 4};
     while(1)
     {
-        DelayMs(2000);
-        SX1280_Operation.SX1280_SendBuff(m_SX1280TestData, 8);
+        DelayMs(500);
+        SX1280_Operation.SX1280_SendBuff(m_SX1280TestData, 3);
     }
 #endif
     while(1)
     {
-        while(controlConfig.workStatus == BERTHPO_MODE_ACTIVE)
+        //memset(&netMutualInfo, 0, sizeof(netMutualInfo));
+        //memset(&controlConfig, 0, sizeof(controlConfig));
+        //BerthPo_WriteParamToFlash();
+        while(controlConfig.workMode == BERTHPO_MODE_FACTORY)   //开机默认进入产测模式
         {
-            BerthPo_WakeFromSleep();                   //车位状态判断
+            if(BerthPo_FactoryTest() == 1)   //产测测试通过
+            {
+                controlConfig.workMode = BERTHPO_MODE_DEEP_SLEEP;   //产测通过进入深度睡眠模式
+                BerthPo_WriteParamToFlash();   //保存产测通过标志
+                BerthPo_DeepSleep();           //进入深度睡眠状态
+            }
+        }
+        while(controlConfig.workMode == BERTHPO_MODE_ACTIVE)
+        {
+            BerthPo_WakeFromSleep();   //车位状态判断
             BerthPo_Sleep();
         }
-        NFC_INT_SET;                                   //开外部唤醒中断输入
-        //deep_sleep();                                //出厂状态,睡眠等待唤醒
-        NFC_INT_CLR;
     }
+
 }

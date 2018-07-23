@@ -21,7 +21,7 @@ extern SCONTROL_SYMPLE tagConfigSymple;
 extern SBERTHPO_PARK_STATUS parkStatus ;
 extern SBT_I410ES_GPIO_TypeDef BTI410ES_GPIO;
 /*******************************************************************************
-* Function Name :void BerthPo_BtInit()
+* Function Name :void BerthPo_BTInit()
 * Description   :À¶ÑÀ³õÊ¼»¯º¯Êý
 * Author        : YJD
 * Input         :
@@ -29,7 +29,7 @@ extern SBT_I410ES_GPIO_TypeDef BTI410ES_GPIO;
 * Other         :
 * Date          :2018.7.12
 *******************************************************************************/
-void BerthPo_BtInit()
+void BerthPo_BTInit(void)
 {
     BT_I410ES_Operation.BT_I410ES_CallBack = BerthPo_JudgeBTRxData;
 }
@@ -42,7 +42,7 @@ void BerthPo_BtInit()
 * Other         :
 * Date          :2018.7.12
 *******************************************************************************/
-void BerthPo_JudgeBTRxData()
+void BerthPo_JudgeBTRxData(void)
 {
     uint8_t m_rxTemp[64] = {0};
     Drivers_BTI410ESRead(m_rxTemp);

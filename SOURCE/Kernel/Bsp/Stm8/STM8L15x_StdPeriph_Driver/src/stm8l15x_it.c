@@ -158,42 +158,9 @@ INTERRUPT_HANDLER(EXTID_H_IRQHandler, 7)
     */
 }
 
-/**
-  * @brief External IT PIN0 Interrupt routine.
-  * @param  None
-  * @retval None
-  */
-INTERRUPT_HANDLER(EXTI0_IRQHandler, 8)
-{
-    /* In order to detect unexpected events during development,
-       it is recommended to set a breakpoint on the following instruction.
-    */
 
-}
 
-/**
-  * @brief External IT PIN2 Interrupt routine.
-  * @param  None
-  * @retval None
-  */
-INTERRUPT_HANDLER(EXTI2_IRQHandler, 10)
-{
-    /* In order to detect unexpected events during development,
-       it is recommended to set a breakpoint on the following instruction.
-    */
 
-}
-
-/**
-  * @brief External IT PIN3 Interrupt routine.
-  * @param  None
-  * @retval None
-  */
-INTERRUPT_HANDLER(EXTI3_IRQHandler, 11)
-{
-    EXTI_SetPinSensitivity(EXTI_Pin_3, EXTI_Trigger_Rising);
-    EXTI_ClearITPendingBit(EXTI_IT_Pin3);
-}
 
 
 

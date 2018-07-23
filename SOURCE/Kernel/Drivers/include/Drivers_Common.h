@@ -3,7 +3,7 @@
 
 /**************∫Í∂®“Â*********************/
 
-
+#include "Delay.h"
 
 #define _EINT()     asm("rim")
 #define _DINT()	    asm("sim")

@@ -61,14 +61,20 @@ int main(void)
     enableInterrupts();	
     while(1)
     {
-        while(controlConfig.workStatus == BERTHPO_MODE_ACTIVE)
+        if(controlConfig.workMode == BERTHPO_MODE_FACTORY)   //开机默认进入产测模式
+        {
+            if(BerthPo_FactoryTest() == 1)   //产测测试通过
+            {
+                controlConfig.workMode = BERTHPO_MODE_DEEP_SLEEP;
+                BerthPo_WriteParamToFlash();   //保存产测通过标志
+            }
+
+        }
+        while(controlConfig.workMode == BERTHPO_MODE_ACTIVE)
         {
             BerthPo_WakeFromSleep();                   //车位状态判断
             BerthPo_Sleep();
         }
-        NFC_INT_SET;                                   //开外部唤醒中断输入
-        //deep_sleep();                                //出厂状态,睡眠等待唤醒
-        NFC_INT_CLR;
     }
 
 }

@@ -64,14 +64,14 @@ void Sx1280_PwrCfgInfo()
         31;           //发射功率      0~31代表-18dBm刿13dBm
     G_tSx1280RegCfgInfo .RADIO_RAMP_TIME = RADIO_RAMP_02_US;
     G_tSx1280RegCfgInfo .irqMask = IRQ_RX_DONE | IRQ_RX_TX_TIMEOUT;
-    G_tSx1280RegCfgInfo .dio1Mask = IRQ_RX_DONE | IRQ_RX_TX_TIMEOUT;
-    G_tSx1280RegCfgInfo .dio2Mask = IRQ_RADIO_NONE;
+    G_tSx1280RegCfgInfo .dio1Mask = IRQ_RADIO_NONE;
+    G_tSx1280RegCfgInfo .dio2Mask = IRQ_RX_DONE | IRQ_RX_TX_TIMEOUT;
     G_tSx1280RegCfgInfo .dio3Mask = IRQ_RADIO_NONE;
     G_tSx1280RegCfgInfo .RXTimeOut.Step = RADIO_TICK_SIZE_1000_US;
     G_tSx1280RegCfgInfo .RXTimeOut.NbSteps =
         0xFFFF;//0000只接收一次，0xFFFF为持续接政
     //初始化G_SX1280_CFG
-    G_SX1280_CFG.maxTryTimes = 500;   //RF发送最大尝试次数
+    G_SX1280_CFG.maxTryTimes = 3;   //RF发送最大尝试次数
 }
 
 
@@ -1192,10 +1192,10 @@ void SX1280ProcessIrqs(void)
   * @param  None
   * @retval None
   */
-INTERRUPT_HANDLER(EXTI4_IRQHandler, 12)
+INTERRUPT_HANDLER(EXTI0_IRQHandler, 8)
 {
     SX1280ProcessIrqs();
-    EXTI_ClearITPendingBit(EXTI_IT_Pin4);
+    EXTI_ClearITPendingBit(EXTI_IT_Pin0);
 }
 
 
@@ -1268,19 +1268,27 @@ void Drivers_SX1280Init(void)
     G_SX1280_CFG.SX1280_BUSY_GPIO_BASE = GPIOD;
     G_SX1280_CFG.SX1280_BUSY_EN_GPIO_Pin = GPIO_Pin_5;
     //IRQ
-    G_SX1280_CFG.MCU_DRDY_GPIO_BASE = GPIOD;
-    G_SX1280_CFG.MCU_DRDY_GPIO_Pin = GPIO_Pin_4;
-    G_SX1280_CFG.MCU_DRDY_EXTI_Pin = EXTI_Pin_4;
-    G_SX1280_CFG.MCU_DRDY_EXTI_BASE = EXTI_IT_Pin4;
+    G_SX1280_CFG.MCU_DRDY_GPIO_BASE = GPIOF;
+    G_SX1280_CFG.MCU_DRDY_GPIO_Pin = GPIO_Pin_0;
+    G_SX1280_CFG.MCU_DRDY_EXTI_Pin = EXTI_Pin_0;
+    G_SX1280_CFG.MCU_DRDY_EXTI_BASE = EXTI_IT_Pin0;
 
     //数据接收缓存
     G_SX1280_CFG.sx1280RxBuf = SX1280_RX_BUFF;
     G_SX1280_CFG.SX1280_RX_BUF_SIZE = DRIVERS_SX1280_RX_BUFF_SIZE;
+	//设置GPIOB,不设置进入不了中断
+	GPIOB->DDR = 0;       //输入模式
+    GPIOB->CR1 |= 0xF0;   //输入模式下，带上拉电阻输入  0110 0000
+    GPIOB->CR2 = 0;       //输入模式下，禁止中断
     disableInterrupts();                      //关全局中断
     Sx1280_PwrCfgInfo();                      //SX1280相关参数设定
     SX1280JK_INIT();                          //1280接口初始化
     SX1280JK_IRQ_ENBLE();                     //中断使能
     SX1280_INIT();                            //SX1280初始化
+    G_SX1280_CFG.SX1280_RESET_GPIO_BASE->DDR |=  G_SX1280_CFG.SX1280_RESET_EN_GPIO_Pin;
+    G_SX1280_CFG.SX1280_RESET_GPIO_BASE->ODR |=  G_SX1280_CFG.SX1280_RESET_EN_GPIO_Pin;
+    DelayMs(100);
+    G_SX1280_CFG.SX1280_RESET_GPIO_BASE->ODR &= ~G_SX1280_CFG.SX1280_RESET_EN_GPIO_Pin;
     enableInterrupts();                       //全局中断使能
 #if SX1280_TEST_MODE || UART_DEBUG   //如果要测试1280参数,或者需要调试串口则初始化串口
     SX1280_TEST_UART.USARTNum = USART1;
@@ -1312,7 +1320,8 @@ void Drivers_SX1280SendBuff(uint8_t * sendBuf, uint8_t bufSize)
 {
     //射频发送数据
     G_tSx1280RegCfgInfo .irqMask = IRQ_TX_DONE | IRQ_RX_TX_TIMEOUT;
-    G_tSx1280RegCfgInfo .dio1Mask = IRQ_TX_DONE | IRQ_RX_TX_TIMEOUT;
+    //G_tSx1280RegCfgInfo .dio1Mask = IRQ_TX_DONE | IRQ_RX_TX_TIMEOUT;
+	G_tSx1280RegCfgInfo .dio2Mask = IRQ_TX_DONE | IRQ_RX_TX_TIMEOUT;
     SX1280SetDioIrqParams(G_tSx1280RegCfgInfo .irqMask,
                           G_tSx1280RegCfgInfo .dio1Mask, G_tSx1280RegCfgInfo .dio2Mask,
                           G_tSx1280RegCfgInfo .dio3Mask);//中断配置
@@ -1507,6 +1516,9 @@ void Drives_SX1280PowerOff()
         ~G_SX1280_CFG.SX1280_BUSY_EN_GPIO_Pin;
     G_SX1280_CFG.MCU_DRDY_GPIO_BASE->DDR |= G_SX1280_CFG.MCU_DRDY_GPIO_Pin;
     G_SX1280_CFG.MCU_DRDY_GPIO_BASE->ODR &= ~G_SX1280_CFG.MCU_DRDY_GPIO_Pin;
+	//CS管脚会给1280供电，所以关闭1280时要拉低CS管脚
+    G_SX1280_CFG.SPI_EN_GPIO_BASE->DDR |=  G_SX1280_CFG.SPI_EN_GPIO_Pin;
+    G_SX1280_CFG.SPI_EN_GPIO_BASE->ODR &=  ~G_SX1280_CFG.SPI_EN_GPIO_Pin;
 }
 
 uint16_t Drivers_SX1280GetMaxTryTimes(void)
@@ -1521,21 +1533,22 @@ void Drivers_SX1280SetTxDoneFlag(uint8_t txDoneFlag)
 {
     G_SX1280_CFG.txDoneFlag = txDoneFlag;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+uint8_t Drivers_SX1280TestMode(void)
+{
+    char *m_sendBuf = "123";
+    uint8_t m_trySendTimes = 10;   //尝试10次
+    while(m_trySendTimes--)
+    {
+        Drivers_SX1280SendBuff((uint8_t*)&m_sendBuf,
+                               3);
+        if(Drivers_SX1280GetTxDoneFlag() == 0x5A)
+        {
+            Drivers_SX1280SetTxDoneFlag(0);
+            return 1;
+        }
+    }
+    return 0;
+}
 
 
 

@@ -16,6 +16,7 @@
 #include "LM75AD.h"
 #include "BSP_Uart.h"
 #include "APP.h"
+#include "Delay.h"
 /*******************************************************************************
 * Function Name : uint16_t LM75AD_GetTemp(void)
 * Description   : 获取LM75AD的温度值 (放大1000倍)

@@ -13,12 +13,13 @@
 #define NB_RX_BUFFER_SIZE 128
 typedef struct
 {
-	uint8_t frameHeader[2];       //帧头
+	uint8_t frameHeader[2];     //帧头
 	uint8_t  controlType;       //控制类型
 	uint8_t  frameType;         //帧类型
 	uint8_t  deviceType;        //设备类型
 	uint8_t  deviceNumber[6];   //设备号
-	uint8_t  frameLens;          //帧长度
+	uint8_t  keyNumber[6];      //秘钥号
+	uint8_t  frameLens;         //帧长度
 }*PFRAME_HEAD_TypeDef, SFRAME_HEAD_TypeDef;
 typedef struct
 {

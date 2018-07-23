@@ -1,18 +1,21 @@
 #ifndef _BERTHPO_SX1280_COMMON_H_
 #define _BERTHPO_SX1280_COMMON_H_
 
-#include "stm8l15x.h"
-#include "Drivers_Common.h"
-#include "BerthPo_SX1280_RM3100.h"
-#include "Drivers_LED.h"
-#include "Drivers_RM3100.h"
-#include "BerthPo_SX1280_Protocol.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-
+#include "stm8l15x.h"
+#include "Delay.h"
+#include "Drivers_Common.h"
+#include "BerthPo_SX1280_RM3100.h"
+#include "Drivers_LED.h"
+#include "Drivers_RM3100.h"
+#include "Drivers_SX1280.h"
+#include "BerthPo_SX1280_Protocol.h"
+#include "BerthPo_SX1280_CompileFiles.h"
+#include "Delay.h"
 
 
 #define MAX_(bit1, bit2)  ((bit1) >= (bit2) ? (bit1) : (bit2))// 最大值
@@ -32,20 +35,21 @@ typedef enum
 //枚举工作模式
 typedef enum
 {
-    BERTHPO_MODE_TEST,         //测试模式
-    BERTHPO_MODE_ACTIVE,       //激活正常工作模式
-    BERTHPO_MODE_FACTORY       //工厂模式
+	BERTHPO_MODE_FACTORY = 0xC5,       //产测模式
+	BERTHPO_MODE_DEEP_SLEEP = 0xB5,    //深度休眠模式
+	BERTHPO_MODE_SELF_TEST = 0xD5,     //开机自检模式
+    BERTHPO_MODE_ACTIVE = 0xA5,        //激活正常工作模   
 } BERTHPO_MODE;
 
 typedef struct
 {
-    uint8_t workStatus;
-    uint8_t tagID[6];
+	uint8_t workMode;              //工作模式
+    uint8_t  idNumber[6];     //UID 
+	uint8_t  keyNumber[6];    //KEY
     uint8_t updateFlag;
     uint8_t version;
     uint16_t wdtInterval;          //WDT睡眠时间
     uint16_t heartbeatInterval;    //心跳时间
-    uint16_t sendPackCount;        //发送数据包间隔
     uint16_t alarmValid;
     uint8_t paraIntFlag[3];        //参数同步标志
     uint8_t ledFlag;
@@ -83,17 +87,14 @@ typedef struct
 } *PPARAM_CONFIG, SPARAM_CONFIG;
 typedef struct
 {
-    uint8_t  idNub[6];
-    uint32_t userCode;
-    uint8_t  intFlag;
+    uint8_t  idNumber[6];     //UID 
+	uint8_t  keyNumber[6];    //KEY
     uint8_t  ledFlag;    //led开关标志，取系统灯配置
     uint8_t  mcuSleepFlag;
 }*PNODE_CONFIG, SNODE_CONFIG;
 typedef struct
 {
-    uint8_t initSign[3];
-    uint8_t workStatus;                 //20170727出厂状态标志，ACTIVATE为激活状态，LEAVE_FACTORY为出厂状态
-    uint8_t Tag_workMode;               //工作模式
+    uint8_t workMode;                   //工作模式
     SNODE_CONFIG   nodeConfig;          //共7字节
     SPARAM_CONFIG  paramConfig;         //共32字节
 } *PCONTROL_CONFIG, SCONTROL_CONFIG;
@@ -116,10 +117,10 @@ typedef struct
     uint8_t  debugInfoFlag;            //调试信息标志
     uint8_t  outBottomFlag;            //输出本底标志,0--手动校准本底，1--动态本底
     uint8_t  startUpGetBottom;         //系统开机获取本地标志
+    uint16_t randomDelay;              //随机延时时间
 } *PCONTROL_SYMPLE, SCONTROL_SYMPLE;
 typedef struct   //临时上传数据，激活上传一次
 {
-	uint16_t userCode;       //用户ID
 	uint8_t  deviceSN[15];   //SN码
 }*PTEMPORARY_UPLOAD_DATA, STEMPORARY_UPLOAD_DATA;  
 
@@ -133,6 +134,6 @@ void BerthPo_GetRM3100Data();
 uint8_t BerthPo_SetRm3100Base();
 void BerthPo_EMDealGeomagneticValue();   //处理地磁数据
 uint8_t BerthPo_FixedVCheck();                           //固定值判断车位状态
-
+uint8_t BerthPo_FactoryTest(void);       //场测模式
 #endif   //_BERTHPO_COMMON_H_
 

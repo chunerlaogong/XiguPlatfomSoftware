@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Drivers_SX1280.h"
+#include "BSP_EEPROM.h"
+#include "Drivers_NFC.h"
+#include "BerthPo_SX1280_Sleep.h"
 /***********************引用变量************************/
 extern SCONTROL_CONFIG  controlConfig;
 extern SNET_MUTUAL_INFO  netMutualInfo;
@@ -10,6 +13,7 @@ extern LED_GPIO_TypeDef LED_GPIO;
 extern SRM3100_GPIO_TypeDef RM3100_GPIO;
 extern SSENSOR_RM3100 sensorRm3100;
 extern SCONTROL_SYMPLE tagConfigSymple;
+extern NFC_OPERATION_TypeDef NFC_Operation;
 /*******************************************************************************
 * Function Name : BerthPo_InitMcu()
 * Description   : 泊位宝Mcu初始化
@@ -42,19 +46,16 @@ void BerthPo_InitMcu()
     RM3100_GPIO.gpioI2cStructer.GPIO_SCL_PIN = GPIO_Pin_1;
     RM3100_GPIO.gpioI2cStructer.SLAVE_ADDRESS = 0x20;
     RM3100_Operation.RM3100_PowerOn(&(RM3100_GPIO));
-    
-    
-    //SLAVE_ADDRESS向左移了一位,不需要传0x40
-    
     //初始化LED管脚
     LED_GPIO.LED1_GPIO_BASE = GPIOD;
     LED_GPIO.LED1_GPIO_Pin = GPIO_Pin_1;
     LED_GPIO.LED2_GPIO_BASE = GPIOD;
     LED_GPIO.LED2_GPIO_Pin = GPIO_Pin_2;
+    //初始化NFC需要在1280之前
+    NFC_Operation.NFC_CallBack = BerthPo_NFCCallBack;
+    NFC_Operation.NFC_NFCInit();
+    NFC_Operation.NFC_PowerOn();
     //初始化SX1280
-    GPIOB->DDR = 0;              //输入模式
-    GPIOB->CR1 = 0xFF;           //输入模式下，带上拉电阻输入
-    GPIOB->CR2 = 0;              //输入模式下，禁止中断
     SX1280_Operation.SX1280_PowerOn();
 
 }
@@ -71,7 +72,8 @@ void BerthPo_InitMcu()
 
 void BerthPo_InitSysParam()
 {
-    DelayMs(200);
+    tagConfigSymple.startUpGetBottom = 1;      //开机初始化获取本底
+    BerthPo_ReadParamFromFlash();
     if(netMutualInfo.paraIntFlag[0] == 0x5A
        && netMutualInfo.paraIntFlag[1] == 0xA5
        && netMutualInfo.paraIntFlag[2] == 0x65)
@@ -80,15 +82,19 @@ void BerthPo_InitSysParam()
     }
     else
     {
-        Led_Operation.LedOn(LED_GPIO, 1);
-        Led_Operation.LedOn(LED_GPIO, 2);
-        controlConfig.workStatus = BERTHPO_MODE_ACTIVE;   //ACTIVATE;
-        controlConfig.nodeConfig.idNub[0] = 0x01;         //初始化泊位宝ID
-        controlConfig.nodeConfig.idNub[1] = 0x02;
-        controlConfig.nodeConfig.idNub[2] = 0x03;
-        controlConfig.nodeConfig.idNub[3] = 0x00;
-        controlConfig.nodeConfig.idNub[4] = 0x00;
-        controlConfig.nodeConfig.idNub[5] = 0x00;
+        controlConfig.workMode = BERTHPO_MODE_FACTORY;   //初始化为场测模式;
+        controlConfig.nodeConfig.idNumber[0] = 0x01;          //初始化泊位宝UID
+        controlConfig.nodeConfig.idNumber[1] = 0x02;
+        controlConfig.nodeConfig.idNumber[2] = 0x03;
+        controlConfig.nodeConfig.idNumber[3] = 0x00;
+        controlConfig.nodeConfig.idNumber[4] = 0x00;
+        controlConfig.nodeConfig.idNumber[5] = 0x00;
+        controlConfig.nodeConfig.keyNumber[0] = 0x01;         //初始化泊位宝KEYID
+        controlConfig.nodeConfig.keyNumber[1] = 0x02;
+        controlConfig.nodeConfig.keyNumber[2] = 0x03;
+        controlConfig.nodeConfig.keyNumber[3] = 0x00;
+        controlConfig.nodeConfig.keyNumber[4] = 0x00;
+        controlConfig.nodeConfig.keyNumber[5] = 0x00;
         controlConfig.paramConfig.alarmValid =
             0x4C00;    //有效标志,第10位有车，第11位无车，第14位频繁快速唤醒报警
         controlConfig.nodeConfig.ledFlag = 0;             //led开启状态
@@ -106,28 +112,17 @@ void BerthPo_InitSysParam()
             5;                     //WDT固定睡眠时间 unit:s
         controlConfig.paramConfig.heartbeatInterval =
             5;               //发送心跳间隔 unit:min 默认5分钟
-        tagConfigSymple.startUpGetBottom = 1;      //开机初始化获取本底
         netMutualInfo.paraIntFlag[0] = 0x5A;
         netMutualInfo.paraIntFlag[1] = 0xA5;
         netMutualInfo.paraIntFlag[2] = 0x65;
 
         BerthPo_WriteParamToFlash();
+        //memset(netMutualInfo, 0, sizeof(netMutualInfo));
+        //memset(controlConfig, 0, sizeof(controlConfig));
         BerthPo_ReadParamFromFlash();
-      //  Led_Operation.LedOff(LED_GPIO, 1);
-      //  Led_Operation.LedOff(LED_GPIO, 2);
         nop();
     }
 
 }
-void BerthPo_CloseAll_Peripheral()
-{
-	GPIO_Init(GPIOA , 0XFF , GPIO_Mode_Out_OD_Low_Slow);
-    GPIO_Init(GPIOB , 0XFF , GPIO_Mode_Out_OD_Low_Slow);
-    GPIO_Init(GPIOC , 0XFF , GPIO_Mode_Out_OD_Low_Slow);
-    GPIO_Init(GPIOD , 0XFF , GPIO_Mode_Out_OD_Low_Slow);
-    GPIO_Init(GPIOE , 0XFF , GPIO_Mode_Out_OD_Low_Slow);
-    GPIO_Init(GPIOF , 0XFF , GPIO_Mode_Out_OD_Low_Slow);
-	PWR_UltraLowPowerCmd(ENABLE);
 
-}
 

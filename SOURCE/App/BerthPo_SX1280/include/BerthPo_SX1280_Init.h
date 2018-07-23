@@ -10,12 +10,6 @@
 /****************º¯ÊýÉùÃ÷********************/
 void BerthPo_InitMcu();
 void BerthPo_InitSysParam();
-
-
-
-
-
-
 #endif   //_BERTHPO_SX1280_INIT_H_
 
 

@@ -1,8 +1,4 @@
 
-#include "stdio.h"
-#include "string.h"
-#include "stdlib.h"
-
 #include "BerthPo_SX1280_StatisMagneticDensity.h"
 #include "BerthPo_SX1280_Common.h"
 #include "BerthPo_SX1280_RM3100.h"

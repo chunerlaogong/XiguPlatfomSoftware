@@ -1,8 +1,7 @@
-#include "BerthPo_Common.h"
+#include "BerthPo_SX1280_Common.h"
 #include "Delay.h"
 #include "Drivers_LED.h"
 #include "Drivers_NFC.h"
-#include "Drivers_RM3100.h"
 /******************引用外部变量******************/
 extern SBERTHPO_PARK_STATUS parkStatus;
 extern SCONTROL_CONFIG  controlConfig;
@@ -29,8 +28,14 @@ uint8_t BerthPo_FactoryTest(void)
     {
         return 0;
     }
+	if(!SX1280_Operation.SX1280_TestMode())
+	{
+		return 0;
+	}
     return 1;
 }
+
+
 
 /*******************************************************************************
 * Function Name : void BerthPo_WriteParamToFlash(SPARAM_NB_TAG paramNBTag)
@@ -44,14 +49,14 @@ uint8_t BerthPo_FactoryTest(void)
 
 void BerthPo_WriteParamToFlash()
 {
-    netMutualInfo.idNub[0] = controlConfig.nodeConfig.idNub[0];  //保存ID
-    netMutualInfo.idNub[1] = controlConfig.nodeConfig.idNub[1];
-    netMutualInfo.idNub[2] = controlConfig.nodeConfig.idNub[2];
-    netMutualInfo.idNub[3] = controlConfig.nodeConfig.idNub[3];  //保存ID
-    netMutualInfo.idNub[4] = controlConfig.nodeConfig.idNub[4];
-    netMutualInfo.idNub[5] = controlConfig.nodeConfig.idNub[5];
+    netMutualInfo.workStatus = controlConfig.workStatus;
+    netMutualInfo.tagID[0] = controlConfig.nodeConfig.idNub[0];  //保存ID
+    netMutualInfo.tagID[1] = controlConfig.nodeConfig.idNub[1];
+    netMutualInfo.tagID[2] = controlConfig.nodeConfig.idNub[2];
+    netMutualInfo.tagID[3] = controlConfig.nodeConfig.idNub[3];  //保存ID
+    netMutualInfo.tagID[4] = controlConfig.nodeConfig.idNub[4];
+    netMutualInfo.tagID[5] = controlConfig.nodeConfig.idNub[5];
     netMutualInfo.ledFlag  = controlConfig.nodeConfig.ledFlag;
-    netMutualInfo.workMode = controlConfig.workMode;
     netMutualInfo.wdtInterval = controlConfig.paramConfig.wdtInterval;
     netMutualInfo.heartbeatInterval =
         controlConfig.paramConfig.heartbeatInterval;
@@ -67,12 +72,9 @@ void BerthPo_WriteParamToFlash()
     netMutualInfo.EMDataBottom_z = sensorRm3100.rm3100DynamicBoottom.EMDataBottom_z;
     netMutualInfo.fastRouse = controlConfig.paramConfig.fastRouse;
     netMutualInfo.fastRouseAlarm = controlConfig.paramConfig.fastRouseAlarm;
-    uint8_t m_writeLen = 0;
-    m_writeLen = sizeof(SNET_MUTUAL_INFO);
-	uint8_t m_addr = 48; 
-    WriteParamToEEPROM((uint8_t *) & (netMutualInfo),
-                               &m_writeLen,
-                                &m_addr);
+    BerthPo_WriteParamToEEPROM((uint8_t *) & (netMutualInfo),
+                               sizeof(SNET_MUTUAL_INFO),
+                               48);
 }
 /*******************************************************************************
 * Function Name : void ReadTagParam(SPARAM_NB_TAG paramNBTag)
@@ -86,21 +88,15 @@ void BerthPo_WriteParamToFlash()
 
 void BerthPo_ReadParamFromFlash()
 {
-	uint8_t m_writeLen = 0;
-    m_writeLen = sizeof(SNET_MUTUAL_INFO);
-	uint8_t m_addr = 48; 
-    ReadParamFromEEPROM((uint8_t*)(&netMutualInfo),
-                                &m_writeLen,
-                                &m_addr);
-    controlConfig.workMode =  netMutualInfo.workMode;
-    controlConfig.nodeConfig.idNub[0] = netMutualInfo.idNub[0] ;  //保存ID
-    controlConfig.nodeConfig.idNub[1] = netMutualInfo.idNub[1] ;  //保存ID
-    controlConfig.nodeConfig.idNub[2] = netMutualInfo.idNub[2] ;  //保存ID
-    controlConfig.nodeConfig.idNub[3] = netMutualInfo.idNub[3] ;  //保存ID
-    controlConfig.nodeConfig.idNub[4] = netMutualInfo.idNub[4] ;  //保存ID
-    controlConfig.nodeConfig.idNub[5] = netMutualInfo.idNub[5] ;  //保存ID
-    controlConfig.nodeConfig.ledFlag =  netMutualInfo.ledFlag;  
-    controlConfig.paramConfig.wdtInterval =  netMutualInfo.wdtInterval;  
+    BerthPo_ReadParamFromEEPROM((uint8_t*) & (netMutualInfo),
+                                sizeof(SNET_MUTUAL_INFO),
+                                48);
+    controlConfig.workStatus =  netMutualInfo.workStatus;
+    controlConfig.nodeConfig.idNub[0] =  netMutualInfo.tagID[0];
+    controlConfig.nodeConfig.idNub[1] =  netMutualInfo.tagID[1];
+    controlConfig.nodeConfig.idNub[2] =  netMutualInfo.tagID[2];
+    controlConfig.nodeConfig.ledFlag =  netMutualInfo.ledFlag;
+    controlConfig.paramConfig.wdtInterval =  netMutualInfo.wdtInterval;
     controlConfig.paramConfig.heartbeatInterval =
         netMutualInfo.heartbeatInterval;
     controlConfig.paramConfig.alarmValid =  netMutualInfo.alarmValid;
@@ -143,7 +139,7 @@ void BerthPo_MakeHead(PFRAME_DATA_TypeDef pframeData)
     pframeData->packageHeader.frameHeader[0] |= 0xFE;
     pframeData->packageHeader.frameHeader[1] |= 0x03;
     pframeData->packageHeader.controlType = 0x00;
-    pframeData->packageHeader.deviceType = 0x05;   //NB泊位宝
+    pframeData->packageHeader.deviceType = 0x06;   //射频泊位宝
 }
 /*
  * @name:   Hex_to_ASCII
@@ -382,14 +378,6 @@ uint8_t BerthPo_FixedVCheck()         //固定值判断车位状态
     if(Mul_XYZAT >= Module_TB * 3)                 ValueWeight = ValueWeight + 1;
     return ValueWeight;
 }
-
-void BerthPo_NFCCallBack()
-{
-	controlConfig.workMode = BERTHPO_MODE_ACTIVE;
-}
-
-
-
 
 
 

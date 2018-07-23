@@ -16,7 +16,7 @@
 
 void MemCopy(uint8_t* pFrom, uint8_t* pTo, uint8_t cLen)
 {
-	for (uint8_t i=0; i<cLen; i++)
+	for (uint8_t i = 0; i < cLen; i++)
 	{
 		pTo[i] = pFrom[i];
 	}

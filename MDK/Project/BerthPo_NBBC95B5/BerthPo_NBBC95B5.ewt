@@ -2321,6 +2321,12 @@
                 </file>
             </group>
             <group>
+                <name>NFC</name>
+                <file>
+                    <name>$PROJ_DIR$\..\..\..\SOURCE\Kernel\Drivers\NFC\Drivers_NFC.c</name>
+                </file>
+            </group>
+            <group>
                 <name>RM3100</name>
                 <file>
                     <name>$PROJ_DIR$\..\..\..\SOURCE\Kernel\Drivers\RM3100\Drivers_RM3100.c</name>

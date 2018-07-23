@@ -43,7 +43,8 @@ typedef struct
             uint8_t* readData, uint8_t readLen);
     uint8_t (*RM3100_WriteBytes)(uint8_t regAddr, PGPIO_I2C_TypeDef pGpioI2cStructer,
                                  uint8_t* writeData, uint8_t writeLen);
-    void (*RM3100_SetMeaureMode)(PRM3100_GPIO_TypeDef pRM3100_GPIO , uint8_t mode);
+    void (*RM3100_SetMeaureMode)(PRM3100_GPIO_TypeDef pRM3100_GPIO , uint8_t mode);   //1280参数设置
+	uint8_t (*RM3100_TestMode)(PRM3100_GPIO_TypeDef pRM3100_GPIO);   //测试模式
 } RM3100_OPERATION_TypeDef;
 
 
@@ -108,6 +109,7 @@ void Drivers_RM3100_I2CDisable(PRM3100_GPIO_TypeDef pRM3100_GPIO);
 void Drivers_RM3100_SetMeaureMode(PRM3100_GPIO_TypeDef pRM3100_GPIO, uint8_t mode);
 void Drivers_RM3100_McuRdRyOn(PRM3100_GPIO_TypeDef pRM3100_GPIO);
 void Drivers_RM3100_McuRdRyOff(PRM3100_GPIO_TypeDef pRM3100_GPIO);
+uint8_t Drivers_RM3100_TestMode(PRM3100_GPIO_TypeDef pRM3100_GPIO);
 
 //提供RM3100对外的接口
 static const RM3100_OPERATION_TypeDef RM3100_Operation =
@@ -122,5 +124,6 @@ static const RM3100_OPERATION_TypeDef RM3100_Operation =
     .RM3100_I2CEnable = Drivers_RM3100_I2CEnable,
     .RM3100_I2CDisable = Drivers_RM3100_I2CDisable,
     .RM3100_SetMeaureMode = Drivers_RM3100_SetMeaureMode,
+    .RM3100_TestMode = Drivers_RM3100_TestMode,
 };
 #endif

@@ -17,4 +17,6 @@
 #define BOOTLOADER_START_ADDRESS  (0x8000)
 void WriteBuffToFlashEepRom(FLASH_MemType_TypeDef FLASH_MemType, uint32_t cAddr, uint8_t *pFromBuff, uint32_t cLen);   
 void ReadFlashEepRomToBuff(FLASH_MemType_TypeDef FLASH_MemType, uint32_t cAddr, uint8_t *pToBuff, uint32_t cLen);
+void ReadParamFromEEPROM(uint8_t* buff, uint8_t* cLen, uint8_t* cAddr);//len:207  cAddr:48
+void WriteParamToEEPROM(uint8_t* buff,uint8_t* cLen, uint8_t* cAddr);
 #endif   //_BSP_EEPROM_H

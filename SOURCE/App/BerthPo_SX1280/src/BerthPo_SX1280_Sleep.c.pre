@@ -81,14 +81,14 @@ void BerthPo_NFCCallBack()
     }
     if(BerthPo_FactoryTest() == 1)   //开机自检测试通过，LED2闪烁5次
     {
-        for(uint8_t i = 0; i < 5; i++)
-        {
-            Led_Operation.LedOn(LED_GPIO, 2);
-            DelayMs(500);
-            Led_Operation.LedOff(LED_GPIO, 2);
-            DelayMs(500);
-            //void BerthPo_InitMcu();        //从新初始化MCU
-            //void BerthPo_InitSysParam();   //初始化系统参数
-        }
+      for(uint8_t i = 0; i < 5; i++)
+    {
+        Led_Operation.LedOn(LED_GPIO, 2);
+        DelayMs(500);
+        Led_Operation.LedOff(LED_GPIO, 2);
+        DelayMs(500);
+    {
     }
+    //void BerthPo_InitMcu();        //从新初始化MCU
+    //void BerthPo_InitSysParam();   //初始化系统参数
 }

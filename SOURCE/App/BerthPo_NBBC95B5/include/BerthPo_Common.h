@@ -8,6 +8,7 @@
 #include "Drivers_LED.h"
 #include "Drivers_RM3100.h"
 #include "BerthPo_Protocol.h"
+#include "Delay.h"
 #include <math.h>
 
 #define MAX_(bit1, bit2)  ((bit1) >= (bit2) ? (bit1) : (bit2))// 最大值
@@ -27,22 +28,22 @@ typedef enum
 //枚举工作模式
 typedef enum
 {
-    BERTHPO_MODE_TEST,         //测试模式
-    BERTHPO_MODE_ACTIVE,       //激活正常工作模式
-    BERTHPO_MODE_FACTORY       //工厂模式
+    BERTHPO_MODE_FACTORY = 1,       //产测模式
+	BERTHPO_MODE_DEEP_SLEEP,        //深度休眠模式
+    BERTHPO_MODE_ACTIVE,            //激活正常工作模   
 } BERTHPO_MODE;
 
 typedef struct
 {
-    uint8_t workStatus;
+	uint8_t workMode;              //工作模式
     uint8_t initNB;
     uint16_t userCode;
-    uint8_t tagID[3];
+     uint8_t  idNub[6];     //UID 
+	uint8_t  keyNum[6];    //KEY
     uint8_t updateFlag;
     uint8_t version;
     uint16_t wdtInterval;          //WDT睡眠时间
     uint16_t heartbeatInterval;    //心跳时间
-    uint16_t sendPackCount;        //发送数据包间隔
     uint16_t alarmValid;
     uint8_t paraIntFlag[3];        //参数同步标志
     uint8_t ledFlag;
@@ -85,21 +86,18 @@ typedef struct
 } *PPARAM_CONFIG, SPARAM_CONFIG;
 typedef struct
 {
-    uint8_t  idNub[6];
-    uint8_t  intFlag;
+    uint8_t  idNumber[6];     //UID 
+	uint8_t  keyNumber[6];    //KEY
     uint8_t  ledFlag;    //led开关标志，取系统灯配置
     uint8_t  mcuSleepFlag;
 }*PNODE_CONFIG, SNODE_CONFIG;
 typedef struct
 {
-    uint8_t initSign[3];
-    uint8_t workStatus;                 //20170727出厂状态标志，ACTIVATE为激活状态，LEAVE_FACTORY为出厂状态
     uint8_t initNB;
-    uint8_t Tag_workMode;               //工作模式
+    uint8_t workMode;                   //工作模式
     SNODE_CONFIG   nodeConfig;          //共7字节
     SPARAM_CONFIG  paramConfig;         //共32字节
 } *PCONTROL_CONFIG, SCONTROL_CONFIG;
-
 typedef struct
 {
     uint8_t currentParkState;    //当前停车状态，用于比较停车状态是否改变
@@ -132,6 +130,7 @@ void Hex_to_ASCII(char *pHex, char *pASCII, uint8_t len);
 void BerthPo_GetRM3100Data();
 uint8_t BerthPo_SetRm3100Base();
 void BerthPo_EMDealGeomagneticValue();   //处理地磁数据
-uint8_t BerthPo_FixedVCheck();                           //固定值判断车位状态
+uint8_t BerthPo_FixedVCheck();           //固定值判断车位状态
+void BerthPo_NFCCallBack();    //NFC回调函数
 
 #endif   //_BERTHPO_COMMON_H_

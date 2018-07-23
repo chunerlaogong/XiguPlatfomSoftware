@@ -2,7 +2,7 @@
 #include "Delay.h"
 #include "Drivers_LED.h"
 #include "Drivers_NFC.h"
-#include <math.h>
+#include "BSP_RTC.h"
 /******************引用外部变量******************/
 extern SBERTHPO_PARK_STATUS parkStatus;
 extern SCONTROL_CONFIG  controlConfig;
@@ -11,6 +11,32 @@ extern SSENSOR_RM3100 sensorRm3100;
 extern SRM3100_GPIO_TypeDef RM3100_GPIO;
 extern LED_GPIO_TypeDef LED_GPIO;
 extern SCONTROL_SYMPLE tagConfigSymple;
+
+
+/*******************************************************************************
+* Function Name : uint8_t BerthPo_FactoryTest(void)
+* Description   : 场测模式
+* Author        : YJD
+* Input         : NULL
+* Output        : 0-产测失败/1-产测成功
+* Other         : NULL
+* Date          : 2018.07.22
+*******************************************************************************/
+
+uint8_t BerthPo_FactoryTest(void)
+{
+    if(!RM3100_Operation.RM3100_TestMode(&(RM3100_GPIO)))
+    {
+        return 0;
+    }
+    if(!SX1280_Operation.SX1280_TestMode())
+    {
+        return 0;
+    }
+    return 1;
+}
+
+
 
 /*******************************************************************************
 * Function Name : void BerthPo_WriteParamToFlash(SPARAM_NB_TAG paramNBTag)
@@ -24,13 +50,19 @@ extern SCONTROL_SYMPLE tagConfigSymple;
 
 void BerthPo_WriteParamToFlash()
 {
-    netMutualInfo.workStatus = controlConfig.workStatus;
-    netMutualInfo.tagID[0] = controlConfig.nodeConfig.idNub[0];  //保存ID
-    netMutualInfo.tagID[1] = controlConfig.nodeConfig.idNub[1];
-    netMutualInfo.tagID[2] = controlConfig.nodeConfig.idNub[2];
-	netMutualInfo.tagID[3] = controlConfig.nodeConfig.idNub[3];  //保存ID
-    netMutualInfo.tagID[4] = controlConfig.nodeConfig.idNub[4];
-    netMutualInfo.tagID[5] = controlConfig.nodeConfig.idNub[5];
+    netMutualInfo.workMode = controlConfig.workMode;
+    netMutualInfo.idNumber[0] = controlConfig.nodeConfig.idNumber[0];  //保存UID
+    netMutualInfo.idNumber[1] = controlConfig.nodeConfig.idNumber[1];
+    netMutualInfo.idNumber[2] = controlConfig.nodeConfig.idNumber[2];
+    netMutualInfo.idNumber[3] = controlConfig.nodeConfig.idNumber[3]; 
+    netMutualInfo.idNumber[4] = controlConfig.nodeConfig.idNumber[4];
+    netMutualInfo.idNumber[5] = controlConfig.nodeConfig.idNumber[5];
+    netMutualInfo.keyNumber[0] = controlConfig.nodeConfig.keyNumber[0];  //保存UID
+    netMutualInfo.keyNumber[1] = controlConfig.nodeConfig.keyNumber[1];
+    netMutualInfo.keyNumber[2] = controlConfig.nodeConfig.keyNumber[2];
+    netMutualInfo.keyNumber[3] = controlConfig.nodeConfig.keyNumber[3]; 
+    netMutualInfo.keyNumber[4] = controlConfig.nodeConfig.keyNumber[4];
+    netMutualInfo.keyNumber[5] = controlConfig.nodeConfig.keyNumber[5];
     netMutualInfo.ledFlag  = controlConfig.nodeConfig.ledFlag;
     netMutualInfo.wdtInterval = controlConfig.paramConfig.wdtInterval;
     netMutualInfo.heartbeatInterval =
@@ -47,8 +79,12 @@ void BerthPo_WriteParamToFlash()
     netMutualInfo.EMDataBottom_z = sensorRm3100.rm3100DynamicBoottom.EMDataBottom_z;
     netMutualInfo.fastRouse = controlConfig.paramConfig.fastRouse;
     netMutualInfo.fastRouseAlarm = controlConfig.paramConfig.fastRouseAlarm;
-    BerthPo_WriteParamToEEPROM((uint8_t *) & (netMutualInfo), sizeof(SNET_MUTUAL_INFO),
-                               48);
+	uint8_t m_writeLen = 0;
+    m_writeLen = sizeof(SNET_MUTUAL_INFO);
+	uint8_t m_addr = 48; 
+    WriteParamToEEPROM((uint8_t *) & (netMutualInfo),
+                               &m_writeLen,
+                                &m_addr);
 }
 /*******************************************************************************
 * Function Name : void ReadTagParam(SPARAM_NB_TAG paramNBTag)
@@ -62,12 +98,25 @@ void BerthPo_WriteParamToFlash()
 
 void BerthPo_ReadParamFromFlash()
 {
-    BerthPo_ReadParamFromEEPROM((uint8_t*) & (netMutualInfo), sizeof(SNET_MUTUAL_INFO),
-                                48);
-    controlConfig.workStatus =  netMutualInfo.workStatus;
-    controlConfig.nodeConfig.idNub[0] =  netMutualInfo.tagID[0];
-    controlConfig.nodeConfig.idNub[1] =  netMutualInfo.tagID[1];
-    controlConfig.nodeConfig.idNub[2] =  netMutualInfo.tagID[2];
+    uint8_t m_writeLen = 0;
+    m_writeLen = sizeof(SNET_MUTUAL_INFO);
+	uint8_t m_addr = 48; 
+    ReadParamFromEEPROM((uint8_t*)(&netMutualInfo),
+                                &m_writeLen,
+                                &m_addr);
+    controlConfig.workMode =  netMutualInfo.workMode;
+    controlConfig.nodeConfig.idNumber[0] = netMutualInfo.idNumber[0] ;  //读取UID
+    controlConfig.nodeConfig.idNumber[1] = netMutualInfo.idNumber[1] ;  
+    controlConfig.nodeConfig.idNumber[2] = netMutualInfo.idNumber[2] ; 
+    controlConfig.nodeConfig.idNumber[3] = netMutualInfo.idNumber[3] ;  
+    controlConfig.nodeConfig.idNumber[4] = netMutualInfo.idNumber[4] ;  
+    controlConfig.nodeConfig.idNumber[5] = netMutualInfo.idNumber[5] ;
+	controlConfig.nodeConfig.keyNumber[0] = netMutualInfo.keyNumber[0] ;  //读取UID
+    controlConfig.nodeConfig.keyNumber[1] = netMutualInfo.keyNumber[1] ;  
+    controlConfig.nodeConfig.keyNumber[2] = netMutualInfo.keyNumber[2] ; 
+    controlConfig.nodeConfig.keyNumber[3] = netMutualInfo.keyNumber[3] ;  
+    controlConfig.nodeConfig.keyNumber[4] = netMutualInfo.keyNumber[4] ;  
+    controlConfig.nodeConfig.keyNumber[5] = netMutualInfo.keyNumber[5] ;  
     controlConfig.nodeConfig.ledFlag =  netMutualInfo.ledFlag;
     controlConfig.paramConfig.wdtInterval =  netMutualInfo.wdtInterval;
     controlConfig.paramConfig.heartbeatInterval =
@@ -79,13 +128,16 @@ void BerthPo_ReadParamFromFlash()
         netMutualInfo.getEMBottom_RFModThreshold;
     controlConfig.paramConfig.getEMBottom_RFAngleThreshold =
         netMutualInfo.getEMBottom_RFAngleThreshold;
-    sensorRm3100.rm3100DynamicBoottom.EMDataBottom_x =  netMutualInfo.EMDataBottom_x;
-    sensorRm3100.rm3100DynamicBoottom.EMDataBottom_y =  netMutualInfo.EMDataBottom_y;
-    sensorRm3100.rm3100DynamicBoottom.EMDataBottom_z =  netMutualInfo.EMDataBottom_z;
+    sensorRm3100.rm3100DynamicBoottom.EMDataBottom_x =
+        netMutualInfo.EMDataBottom_x;
+    sensorRm3100.rm3100DynamicBoottom.EMDataBottom_y =
+        netMutualInfo.EMDataBottom_y;
+    sensorRm3100.rm3100DynamicBoottom.EMDataBottom_z =
+        netMutualInfo.EMDataBottom_z;
     controlConfig.paramConfig.fastRouse =  netMutualInfo.fastRouse;
     controlConfig.paramConfig.fastRouseAlarm =  netMutualInfo.fastRouseAlarm;
-   tagConfigSymple.sendPackCount = (controlConfig.paramConfig.heartbeatInterval *
-                              60) / controlConfig.paramConfig.wdtInterval;
+    tagConfigSymple.sendPackCount = (controlConfig.paramConfig.heartbeatInterval *
+                                     60) / controlConfig.paramConfig.wdtInterval;
     nop();
 }
 /*******************************************************************************
@@ -100,16 +152,16 @@ void BerthPo_ReadParamFromFlash()
 
 void BerthPo_ProductTestMode()
 {
-    
+
 }
 
 void BerthPo_MakeHead(PFRAME_DATA_TypeDef pframeData)
 {
 
-	pframeData->packageHeader.frameHeader[0] |= 0xFE;
-	pframeData->packageHeader.frameHeader[1] |= 0x03;
-	pframeData->packageHeader.controlType = 0x00;
-	pframeData->packageHeader.deviceType = 0x06;   //射频泊位宝
+    pframeData->packageHeader.frameHeader[0] |= 0xFE;
+    pframeData->packageHeader.frameHeader[1] |= 0x03;
+    pframeData->packageHeader.controlType = 0x00;
+    pframeData->packageHeader.deviceType = 0x06;   //射频泊位宝
 }
 /*
  * @name:   Hex_to_ASCII
@@ -151,17 +203,16 @@ void BerthPo_GetRM3100Data()
     uint8_t m_tempBuf[9] = {0};
     long m_reading = 0;
     RM3100_Operation.RM3100_PowerOn(&(RM3100_GPIO));
-    DelayMs(100);                       //上电延时等待R3100准备，小于30us读出数据错误，典型值200us
+    DelayUs(300);                       //上电延时等待R3100准备，小于30us读出数据错误，典型值200us
     enableInterrupts();   //开中断,关中断动作在睡眠被唤醒后执行
-    BSP_RtcGoSleep(30);   //rtc睡眠时间,15ms
-    //  BSP_RtcDeepSleep();
-    //RM3100_Operation.RM3100_McuRdRyOff(RM3100_GPIO);        //关地磁芯片中断输入
-    //RM3100_Operation.RM3100_McuRdRyOn(RM3100_GPIO);         //开地磁芯片中断输入
+    RTCAlarm_Set(20);     //rtc睡眠时间,20ms
+    BSP_RtcDeepSleep();
     RM3100_Operation.RM3100_SetMeaureMode(&(RM3100_GPIO), 1);  //设置单一测量模式*/
     DelayMs(100);
     RM3100_Operation.RM3100_ReadBytes(0x24, &(RM3100_GPIO.gpioI2cStructer),
                                       m_tempBuf, 9);
-    RM3100_Operation.RM3100_PowerOff(&(RM3100_GPIO));               //关闭RM3100所有端口节能
+    RM3100_Operation.RM3100_PowerOff(&
+                                     (RM3100_GPIO));               //关闭RM3100所有端口节能
 
     m_reading  = *m_tempBuf << 8;
     m_reading |= *(m_tempBuf + 1);
@@ -210,7 +261,7 @@ uint8_t BerthPo_SetRm3100Base()
         data_y += sensorRm3100.rm3100CurrentData.EMDataCurrent_y;
         data_z += sensorRm3100.rm3100CurrentData.EMDataCurrent_z;
         dataCount++;
-        DelayMs(10);
+        DelayUs(15);
     }
     //xyz值四舍五入，4次采样平均，所有+-2,2/4=0.5
     data_x = (data_x > 0) ? data_x + 2 : data_x - 2;
@@ -224,7 +275,7 @@ uint8_t BerthPo_SetRm3100Base()
     //复检地磁本底，此时变化应该趋近于零，否则认为初始化错误，应该返回给上级设备错误信息
     for(i = 0; i < 10; i++)
     {
-        DelayMs(10);
+        DelayUs(15);
         BerthPo_GetRM3100Data();   //取地磁数据
         mRms = (sensorRm3100.rm3100CurrentData.EMDataCurrent_x - bottomTemp_x)
                * (sensorRm3100.rm3100CurrentData.EMDataCurrent_x -
@@ -279,10 +330,13 @@ void BerthPo_EMDealGeomagneticValue()   //处理地磁数据
     sensorRm3100.rm3100VaryData.EMDataVary_z =
         sensorRm3100.rm3100CurrentData.EMDataCurrent_z -
         sensorRm3100.rm3100DynamicBoottom.EMDataBottom_z;   //X强度变化矢量差,单位
-	sensorRm3100.diffOfRM =  (unsigned long) (sqrtf(   
-												   (long)((sensorRm3100.rm3100VaryData.EMDataVary_x))*(long)((sensorRm3100.rm3100VaryData.EMDataVary_x))
-													   +(long)((sensorRm3100.rm3100VaryData.EMDataVary_y))*(long)((sensorRm3100.rm3100VaryData.EMDataVary_y))
-														   +4*(long)((sensorRm3100.rm3100VaryData.EMDataVary_z))*(long)((sensorRm3100.rm3100VaryData.EMDataVary_z))));
+    sensorRm3100.diffOfRM =  (unsigned long) (sqrtf(
+                                 (long)((sensorRm3100.rm3100VaryData.EMDataVary_x)) * (long)((
+                                         sensorRm3100.rm3100VaryData.EMDataVary_x))
+                                 + (long)((sensorRm3100.rm3100VaryData.EMDataVary_y)) * (long)((
+                                         sensorRm3100.rm3100VaryData.EMDataVary_y))
+                                 + 4 * (long)((sensorRm3100.rm3100VaryData.EMDataVary_z)) * (long)((
+                                         sensorRm3100.rm3100VaryData.EMDataVary_z))));
     //加重Z轴对模值的贡献度
     sensorRm3100.diffOfRM = (int32_t)sensorRm3100.diffOfRM *
                             0.8;                    //Z轴3*3倍--0.66，4*4倍--0.55,2*2倍---0.8倍,2倍---1倍
@@ -344,7 +398,5 @@ uint8_t BerthPo_FixedVCheck()         //固定值判断车位状态
     if(Mul_XYZAT >= Module_TB * 3)                 ValueWeight = ValueWeight + 1;
     return ValueWeight;
 }
-
-
 
 

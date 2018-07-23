@@ -145,7 +145,6 @@
 
 typedef struct Frame_ctrlArea		//帧控制5byte
 {
-	unsigned int   userCode;		//
 	unsigned char  frameCtrl;	//
 	unsigned char  frameLens;			//
 	unsigned char  pasMima;			//加密控制1byte
@@ -154,12 +153,13 @@ typedef struct Frame_ctrlArea		//帧控制5byte
 
 typedef struct
 {
-	uint8_t frameHeader[2];         //帧头
+	uint8_t frameHeader[2];     //帧头
 	uint8_t  controlType;       //控制类型
 	uint8_t  frameType;         //帧类型
 	uint8_t  deviceType;        //设备类型
 	uint8_t  deviceNumber[6];   //设备号
-	uint8_t  frameLens;          //帧长度
+	uint8_t  keyNumber[6];      //秘钥号
+	uint8_t  frameLens;         //帧长度
 }*PFRAME_HEAD_TypeDef, SFRAME_HEAD_TypeDef;
 typedef struct
 {

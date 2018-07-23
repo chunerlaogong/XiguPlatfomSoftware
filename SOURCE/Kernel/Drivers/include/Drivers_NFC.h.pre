@@ -1,0 +1,22 @@
+#ifndef _DRIVERS_NFC_H_
+#define _DRIVERS_NFC_H_
+#include <stm8l15x.h>
+typedef struct
+{
+    GPIO_TypeDef *NFC_GPIO_BASE;          //NFC中断引脚GPIO BASE
+    uint8_t  NFC_GPIO_Pin;                //NFC中断引脚GPIO Pin
+    EXTI_Pin_TypeDef NFC_EXIT_Pin;        //NFC中断号
+    EXTI_Trigger_TypeDef NFC_Trigger_Type;   //中断类型
+    GPIO_Mode_TypeDef  NFC_Mode_type;     //管脚类型
+} *PNFC_GPIO_TypeDef, SNFC_GPIO_TypeDef ;
+void Drivers_NFCInit(void);          //NFC 初始化
+void Drivers_NFCPowerOn(void);      //NFC 使能
+void Drivers_NFCPowerOff(void);      //NFC 关闭
+typedef struct
+{
+	void (*NFC_NFCInit)(void);
+    void (*NFC_PowerOn)(void);      //NFC 使能
+    void (*NFC_PowerOff)(void);     //NFC 关闭
+    void (*NFC_CallBack)(void);
+} NFC_OPERATION_TypeDef;
+#endif   //_DRIVERS_NFC_H_

@@ -25,5 +25,7 @@ void SetDateAndTime(uint8_t Year,uint8_t Month,uint8_t Day,uint8_t Hour,uint8_t 
 void RTCAlarm_Set(uint16_t Duration);
 void ShowTime(void);
 void RTCAlarm_Dis(void);
+void BSP_RtcDeepSleep(void);
+void BSP_RTCAlarmDelayMs(uint32_t ms);
 #endif   //_BSP_RTC_H_
 

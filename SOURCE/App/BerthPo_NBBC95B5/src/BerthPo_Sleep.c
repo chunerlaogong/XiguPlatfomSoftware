@@ -34,7 +34,7 @@ void BerthPo_Sleep()
     //MEG_PRW_clr;
     //ROUSE_IRQ_set;                                                //开外部唤醒中断输入
     enableInterrupts();                                             //开中断,关中断动作在睡眠被唤醒后执行
-    BSP_RtcGoSleep(m_DelayCount);                                   //rtc睡眠时间
+    RTCAlarm_Set(m_DelayCount);                                   //rtc睡眠时间
     //BSP_RtcDeepSleep();                                             //进入睡眠
     //ROUSE_IRQ_clr;                                                //关外部唤醒中断输入
     //UART_enable();

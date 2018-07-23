@@ -69,7 +69,7 @@ typedef struct {
 }*PBT_INFO_TypeDef,SBT_INFO_TypeDef;
 
 /********************º¯ÊýÉùÃ÷********************/
-void BerthPo_BtInit();
-void BerthPo_JudgeBTRxData();
+void BerthPo_BTInit(void);
+void BerthPo_JudgeBTRxData(void);
 ErrorStatus BerthPo_DealBTData(uint8_t *btRxbuf);
 #endif   //_BERTHPO_BT_H_

@@ -661,6 +661,9 @@ typedef struct
     GPIO_TypeDef *SPI_MISO_GPIO_BASE;     //SX1280 SPI MISO管脚GPIO
     uint8_t SPI_MISO_GPIO_Pin;            //SX1280 SPI MISO管脚Pin
 
+	GPIO_TypeDef *RST_GPIO_BASE;         //SX1280 RST_GPIO管脚GPIO
+    uint8_t RST_GPIO_Pin;                //SX1280 RST_GPIO管脚Pin
+
     SPI_TypeDef *SX1280_SPI_BASE;         //SX1280 SPI
     uint8_t SX1280_SPI_CLK_Peripheral; //SPI时钟
 
@@ -691,10 +694,6 @@ void RF_RxProcess(pWRCfg pWRCfgInfo);
                         SX1280_GPIO.PRW_GPIO_BASE->ODR |= SX1280_GPIO.PRW_GPIO_Pin
 
 
-
-
-
-
 #define DRIVERS_SX1280_RX_BUFF_SIZE 128
 
 static uint8_t SX1280_RX_BUFF[DRIVERS_SX1280_RX_BUFF_SIZE] ;
@@ -717,6 +716,7 @@ typedef struct
     uint16_t (*SX1280_GetMaxTryTimes)(void);
 	uint8_t (*SX1280_GetTxDoneFlag)(void);
 	void   (*SX1280_SetTxDoneFlag)(uint8_t txDoneFlag);
+	uint8_t   (*SX1280_TestMode)(void);    //SX1280测试模式
 } SX1280_OPERATION_TypeDef;
 
 uint32_t Drivers_SX1280ReadBuff(uint8_t *buffter, uint32_t len);
@@ -728,6 +728,8 @@ void Drivers_SX1280ParamModify(uint8_t *bufffer);
 uint16_t Drivers_SX1280GetMaxTryTimes(void);
 uint8_t Drivers_SX1280GetTxDoneFlag(void);
 void Drivers_SX1280SetTxDoneFlag(uint8_t txDoneFlag);
+uint8_t Drivers_SX1280TestMode(void);    //SX1280测试模式
+
 //提供RM3100对外的接口
 static const SX1280_OPERATION_TypeDef SX1280_Operation =
 {
@@ -740,6 +742,7 @@ static const SX1280_OPERATION_TypeDef SX1280_Operation =
 	.SX1280_GetMaxTryTimes = Drivers_SX1280GetMaxTryTimes,
 	.SX1280_GetTxDoneFlag = Drivers_SX1280GetTxDoneFlag,
 	.SX1280_SetTxDoneFlag = Drivers_SX1280SetTxDoneFlag,
+	.SX1280_TestMode = Drivers_SX1280TestMode,
 };
 
 #endif

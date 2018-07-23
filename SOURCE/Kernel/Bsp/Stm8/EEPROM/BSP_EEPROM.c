@@ -16,9 +16,9 @@ Timers:  2014.02.25
 author:  ME 
 
 ************************************************************************************************/
-void BerthPo_ReadParamFromEEPROM(uint8_t* buff, uint8_t cLen, uint8_t cAddr)//len:207  cAddr:48
+void ReadParamFromEEPROM(uint8_t* buff, uint8_t* cLen, uint8_t* cAddr)//len:207  cAddr:48
 {
-	MemCopy((uint8_t*) (EEPROM_START_ADDRESS + cAddr), buff, cLen);
+	MemCopy((uint8_t*) (EEPROM_START_ADDRESS + *cAddr), buff, *cLen);
 }
 
 
@@ -39,16 +39,17 @@ Timers:  2015.12.28
 author:  ME 
 
 ************************************************************************************************/
-void BerthPo_WriteParamToEEPROM(uint8_t* buff,uint8_t cLen, uint8_t cAddr)
+void WriteParamToEEPROM(uint8_t* buff,uint8_t* cLen, uint8_t* cAddr)
 { 
 	FLASH->DUKR = MASS_KEY1;	
 	FLASH->DUKR = MASS_KEY2;
   
 	while(!(FLASH->IAPSR & FLASH_IAPSR_DUL))    asm("nop");	//等待硬件置位	
   
-	MemCopy(buff,(uint8_t*) (EEPROM_START_ADDRESS + cAddr), cLen);
+	MemCopy(buff,(uint8_t*) (EEPROM_START_ADDRESS + *cAddr), *cLen);
   
 	FLASH->IAPSR &= ~FLASH_IAPSR_DUL;
+
 }
 
 /*******************************************************************************
@@ -62,7 +63,7 @@ void BerthPo_WriteParamToEEPROM(uint8_t* buff,uint8_t cLen, uint8_t cAddr)
 *******************************************************************************/
 
 
-/*void WriteBuffToFlashEepRom(FLASH_MemType_TypeDef FLASH_MemType, uint32_t cAddr, uint8_t *pFromBuff, uint32_t cLen)
+void WriteBuffToFlashEepRom(FLASH_MemType_TypeDef FLASH_MemType, uint32_t cAddr, uint8_t *pFromBuff, uint32_t cLen)
 {
 	FLASH_Unlock(FLASH_MemType);
 	if(FLASH_MemType == FLASH_MemType_Data)
@@ -83,7 +84,7 @@ void BerthPo_WriteParamToEEPROM(uint8_t* buff,uint8_t cLen, uint8_t cAddr)
 		}
 	}
 	FLASH_Lock(FLASH_MemType);
-}*/
+}
 /*******************************************************************************
 * Function Name :void ReadFlashEepRomToBuff(FLASH_MemType_TypeDef FLASH_MemType, uint32_t cAddr, uint8_t *pToBuff, uint32_t cLen)
 * Description   :写数据到EEPROM
@@ -94,7 +95,7 @@ void BerthPo_WriteParamToEEPROM(uint8_t* buff,uint8_t cLen, uint8_t cAddr)
 * Date          :2018.05.08
 *******************************************************************************/
 
-/*void ReadFlashEepRomToBuff(FLASH_MemType_TypeDef FLASH_MemType, uint32_t cAddr, uint8_t *pToBuff, uint32_t cLen)
+void ReadFlashEepRomToBuff(FLASH_MemType_TypeDef FLASH_MemType, uint32_t cAddr, uint8_t *pToBuff, uint32_t cLen)
 {
 	if(FLASH_MemType == FLASH_MemType_Program)
 	{
@@ -110,7 +111,7 @@ void BerthPo_WriteParamToEEPROM(uint8_t* buff,uint8_t cLen, uint8_t cAddr)
 			pToBuff[i] = FLASH_ReadByte(EEPROM_START_ADDRESS + cAddr + i);
 		}
 	}
-}*/
+}
 
 
 

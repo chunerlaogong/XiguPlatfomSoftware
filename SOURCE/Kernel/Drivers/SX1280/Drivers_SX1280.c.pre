@@ -1,9 +1,13 @@
 
 #include "Drivers_SX1280.h"
 #include "Delay.h"
+#include "Drivers_NFC.h"
 static SDRIVERS_SX1280_CFG_TypeDef G_SX1280_CFG;
 static sSx1280RegCfg      G_tSx1280RegCfgInfo;
 static PacketParams_t  packetParams;
+//引用外部变量(NFC)
+extern NFC_OPERATION_TypeDef NFC_Operation;
+
 /**********************
 * brief Holds the internal operating mode of the radio
 **********************/
@@ -45,7 +49,8 @@ static QUEUE8_t SX1280_RX_QUEUE = {0};
 void Sx1280_PwrCfgInfo()
 {
     G_tSx1280RegCfgInfo .PacketType = PACKET_TYPE_GFSK;
-    G_tSx1280RegCfgInfo .BitrateBandwidth = GFS_BLE_BR_0_125_BW_0_3;   //GFSK发送速度和带宽，0.125Mb/s, 0.3MHZ
+    G_tSx1280RegCfgInfo .BitrateBandwidth =
+        GFS_BLE_BR_0_125_BW_0_3;   //GFSK发送速度和带宽，0.125Mb/s, 0.3MHZ
     G_tSx1280RegCfgInfo .ModulationIndex = GFS_BLE_MOD_IND_1_00;       //信道
     G_tSx1280RegCfgInfo .ModulationShaping = RADIO_MOD_SHAPING_BT_1_0;
     G_tSx1280RegCfgInfo .PreambleLength = PREAMBLE_LENGTH_32_BITS;
@@ -59,7 +64,8 @@ void Sx1280_PwrCfgInfo()
     G_tSx1280RegCfgInfo .USE_MODE = USE_DCDC;
     G_tSx1280RegCfgInfo .StandByMode = STDBY_RC;
     G_tSx1280RegCfgInfo .RF_FREQUENCY =  2460000000;     //射频频率
-    G_tSx1280RegCfgInfo .TX_OUTPUT_POWER = 31;           //发射功率      0~31代表-18dBm刿13dBm     
+    G_tSx1280RegCfgInfo .TX_OUTPUT_POWER =
+        31;           //发射功率      0~31代表-18dBm刿13dBm
     G_tSx1280RegCfgInfo .RADIO_RAMP_TIME = RADIO_RAMP_02_US;
     G_tSx1280RegCfgInfo .irqMask = IRQ_RX_DONE | IRQ_RX_TX_TIMEOUT;
     G_tSx1280RegCfgInfo .dio1Mask = IRQ_RX_DONE | IRQ_RX_TX_TIMEOUT;
@@ -69,7 +75,7 @@ void Sx1280_PwrCfgInfo()
     G_tSx1280RegCfgInfo .RXTimeOut.NbSteps =
         0xFFFF;//0000只接收一次，0xFFFF为持续接政
     //初始化G_SX1280_CFG
-	G_SX1280_CFG.maxTryTimes = 500;   //RF发送最大尝试次数
+    G_SX1280_CFG.maxTryTimes = 500; //RF发送最大尝试次数
 }
 
 
@@ -856,10 +862,6 @@ void SX1280_INIT()
     packetParams.Params.Gfsk.PayloadLength = G_tSx1280RegCfgInfo.PayloadLength;
     packetParams.Params.Gfsk.CrcLength = G_tSx1280RegCfgInfo.CrcLength;
     packetParams.Params.Gfsk.Whitening = G_tSx1280RegCfgInfo.Whitening;
-
-
-
-
     SX1280HalInit();                                                              //设置回调函数
     SX1280SetRegulatorMode(
         G_tSx1280RegCfgInfo.USE_MODE);                                //设置电压调节器模弿
@@ -964,8 +966,9 @@ void SX1280JK_IRQ_ENBLE()
     GPIO_Init(G_SX1280_CFG.MCU_DRDY_GPIO_BASE, G_SX1280_CFG.MCU_DRDY_GPIO_Pin,
               GPIO_Mode_In_FL_IT);
     EXTI_ClearITPendingBit(G_SX1280_CFG.MCU_DRDY_EXTI_BASE);
-    //中断4为上升沿低电平触叿
+    //中断0为上升沿低电平触叿
     EXTI_SetPinSensitivity(G_SX1280_CFG.MCU_DRDY_EXTI_Pin, EXTI_Trigger_Rising);
+
 }
 
 
@@ -1056,7 +1059,7 @@ int8_t SX1280GetRssiInst(void)
 
 
 /*******************************************
-*Name:SX1280_TxDone
+*Name:void SX1280_GetData(pWRCfg pWRCfgInfo)
 *Description: SX1280发送结板
 *Input:NULL
 *Output:NULL
@@ -1241,6 +1244,7 @@ void Drivers_SX1280WakeUp(void)
 *******************************************************************************/
 void Drivers_SX1280Init(void)
 {
+
     //初始化SX1280;
     //SPI配置
     G_SX1280_CFG.SX1280_SPI_BASE = SPI1;
@@ -1308,28 +1312,28 @@ void Drivers_SX1280Init(void)
 *******************************************************************************/
 void Drivers_SX1280SendBuff(uint8_t * sendBuf, uint8_t bufSize)
 {
-    //射频发送数据
-    G_tSx1280RegCfgInfo .irqMask = IRQ_TX_DONE | IRQ_RX_TX_TIMEOUT;
-    G_tSx1280RegCfgInfo .dio1Mask = IRQ_TX_DONE | IRQ_RX_TX_TIMEOUT;
-    SX1280SetDioIrqParams(G_tSx1280RegCfgInfo .irqMask,
-                          G_tSx1280RegCfgInfo .dio1Mask, G_tSx1280RegCfgInfo .dio2Mask,
-                          G_tSx1280RegCfgInfo .dio3Mask);//中断配置
-    SX1280SendPayload(sendBuf, bufSize, (TickTime_t)
-    {
-        RADIO_TICK_SIZE_1000_US, 500
-    });
-    Wait_TxComplete(500);
-    /*
-    //数据发送完成后自动设为接收模式
-    G_tSx1280RegCfgInfo .irqMask = IRQ_RX_DONE | IRQ_RX_TX_TIMEOUT;
-    G_tSx1280RegCfgInfo .dio1Mask = IRQ_RX_DONE | IRQ_RX_TX_TIMEOUT;
-    SX1280SetDioIrqParams(G_tSx1280RegCfgInfo .irqMask,
-                          G_tSx1280RegCfgInfo .dio1Mask, G_tSx1280RegCfgInfo .dio2Mask,
-                          G_tSx1280RegCfgInfo .dio3Mask);//中断配置
-    G_RFStatus = SX1280GetStatus();   //SX1280射频芯片的状怿
-    SX1280GetPacketStatus(&G_PacketStatus);     //SX1280的数据包状怿
-    SX1280SetRx(G_tSx1280RegCfgInfo .RXTimeOut);//
-    */
+	//射频发送数据
+	   G_tSx1280RegCfgInfo .irqMask = IRQ_TX_DONE | IRQ_RX_TX_TIMEOUT;
+	   G_tSx1280RegCfgInfo .dio1Mask = IRQ_TX_DONE | IRQ_RX_TX_TIMEOUT;
+	   SX1280SetDioIrqParams(G_tSx1280RegCfgInfo .irqMask,
+							 G_tSx1280RegCfgInfo .dio1Mask, G_tSx1280RegCfgInfo .dio2Mask,
+							 G_tSx1280RegCfgInfo .dio3Mask);//中断配置
+	   SX1280SendPayload(sendBuf, bufSize, (TickTime_t)
+	   {
+		   RADIO_TICK_SIZE_1000_US, 500
+	   });
+	   Wait_TxComplete(500);
+	   /*
+	   //数据发送完成后自动设为接收模式
+	   G_tSx1280RegCfgInfo .irqMask = IRQ_RX_DONE | IRQ_RX_TX_TIMEOUT;
+	   G_tSx1280RegCfgInfo .dio1Mask = IRQ_RX_DONE | IRQ_RX_TX_TIMEOUT;
+	   SX1280SetDioIrqParams(G_tSx1280RegCfgInfo .irqMask,
+							 G_tSx1280RegCfgInfo .dio1Mask, G_tSx1280RegCfgInfo .dio2Mask,
+							 G_tSx1280RegCfgInfo .dio3Mask);//中断配置
+	   G_RFStatus = SX1280GetStatus();	 //SX1280射频芯片的状怿
+	   SX1280GetPacketStatus(&G_PacketStatus);	   //SX1280的数据包状怿
+	   SX1280SetRx(G_tSx1280RegCfgInfo .RXTimeOut);//
+	   */
 
 }
 
@@ -1379,55 +1383,55 @@ void Drivers_SX1280ParamModify(uint8_t *bufffer)
             {
 
                 case 0:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_2_000_BW_2_4;
                     break;
                 case 1:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_1_600_BW_2_4;
                     break;
                 case 2:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_1_000_BW_2_4;
                     break;
                 case 3:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_1_000_BW_1_2;
                     break;
                 case 4:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_0_800_BW_2_4;
                     break;
                 case 5:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_0_800_BW_1_2;
                     break;
                 case 6:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_0_500_BW_1_2;
                     break;
                 case 7:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_0_500_BW_0_6;
                     break;
                 case 8:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_0_400_BW_1_2;
                     break;
                 case 9:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_0_400_BW_0_6;
                     break;
                 case 10:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_0_250_BW_0_6;
                     break;
                 case 11:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_0_250_BW_0_3;
                     break;
                 case 12:
-                    G_tSx1280RegCfgInfo .BitrateBandwidth =
+                    G_tSx1280RegCfgInfo.BitrateBandwidth =
                         GFS_BLE_BR_0_125_BW_0_3;
                     break;
                 default:
@@ -1435,13 +1439,13 @@ void Drivers_SX1280ParamModify(uint8_t *bufffer)
             }
             break;
         case 1:   //修改调制通道
-            G_tSx1280RegCfgInfo .ModulationIndex = m_val;
+            G_tSx1280RegCfgInfo.ModulationIndex = m_val;
             break;
         case 2:   //修改发射功率
-            G_tSx1280RegCfgInfo .TX_OUTPUT_POWER = m_val;
+            G_tSx1280RegCfgInfo.TX_OUTPUT_POWER = m_val;
             break;
         case 3:   //修改发射频率
-            G_tSx1280RegCfgInfo .RF_FREQUENCY = m_val * 1000000;
+            G_tSx1280RegCfgInfo.RF_FREQUENCY = m_val * 1000000;
             break;
         default:
             break;
@@ -1488,41 +1492,58 @@ INTERRUPT_HANDLER(USART1_RX_TIM5_CC_IRQHandler, 28)
 }
 void Drivers_SX1280PowerOn()
 {
-	
+    Drivers_SX1280Init();
+
 }
 void Drives_SX1280PowerOff()
 {
-	G_SX1280_CFG.SPI_EN_GPIO_BASE->DDR |= G_SX1280_CFG.SPI_EN_GPIO_Pin;
-	G_SX1280_CFG.SPI_EN_GPIO_BASE->ODR &= ~G_SX1280_CFG.SPI_EN_GPIO_Pin;
-
-		G_SX1280_CFG.PRW_GPIO_BASE->DDR |= G_SX1280_CFG.PRW_GPIO_Pin;
-	G_SX1280_CFG.PRW_GPIO_BASE->ODR &= ~G_SX1280_CFG.PRW_GPIO_Pin;
-
-	G_SX1280_CFG.SX1280_RESET_GPIO_BASE->DDR |= G_SX1280_CFG.SX1280_RESET_EN_GPIO_Pin;
-	G_SX1280_CFG.SX1280_RESET_GPIO_BASE->ODR &= ~G_SX1280_CFG.SX1280_RESET_EN_GPIO_Pin;
-
-	G_SX1280_CFG.SX1280_BUSY_GPIO_BASE->DDR |= G_SX1280_CFG.SX1280_BUSY_EN_GPIO_Pin;
-	G_SX1280_CFG.SX1280_BUSY_GPIO_BASE->ODR &= ~G_SX1280_CFG.SX1280_BUSY_EN_GPIO_Pin;
-
-	G_SX1280_CFG.MCU_DRDY_GPIO_BASE->DDR |= G_SX1280_CFG.MCU_DRDY_GPIO_Pin;
-	G_SX1280_CFG.MCU_DRDY_GPIO_BASE->ODR &= ~G_SX1280_CFG.MCU_DRDY_GPIO_Pin;
-
-
+    G_SX1280_CFG.SPI_EN_GPIO_BASE->DDR |= G_SX1280_CFG.SPI_EN_GPIO_Pin;
+    G_SX1280_CFG.SPI_EN_GPIO_BASE->ODR &= ~G_SX1280_CFG.SPI_EN_GPIO_Pin;
+    G_SX1280_CFG.PRW_GPIO_BASE->DDR |= G_SX1280_CFG.PRW_GPIO_Pin;
+    G_SX1280_CFG.PRW_GPIO_BASE->ODR &= ~G_SX1280_CFG.PRW_GPIO_Pin;
+    G_SX1280_CFG.SX1280_RESET_GPIO_BASE->DDR |=
+        G_SX1280_CFG.SX1280_RESET_EN_GPIO_Pin;
+    G_SX1280_CFG.SX1280_RESET_GPIO_BASE->ODR &=
+        ~G_SX1280_CFG.SX1280_RESET_EN_GPIO_Pin;
+    G_SX1280_CFG.SX1280_BUSY_GPIO_BASE->DDR |= G_SX1280_CFG.SX1280_BUSY_EN_GPIO_Pin;
+    G_SX1280_CFG.SX1280_BUSY_GPIO_BASE->ODR &=
+        ~G_SX1280_CFG.SX1280_BUSY_EN_GPIO_Pin;
+    G_SX1280_CFG.MCU_DRDY_GPIO_BASE->DDR |= G_SX1280_CFG.MCU_DRDY_GPIO_Pin;
+    G_SX1280_CFG.MCU_DRDY_GPIO_BASE->ODR &= ~G_SX1280_CFG.MCU_DRDY_GPIO_Pin;
+    //CS管脚会给1280供电，所以关闭1280时要拉低CS管脚
+    G_SX1280_CFG.SPI_EN_GPIO_BASE->DDR |=  G_SX1280_CFG.SPI_EN_GPIO_Pin;
+    G_SX1280_CFG.SPI_EN_GPIO_BASE->ODR &=  ~G_SX1280_CFG.SPI_EN_GPIO_Pin;
 }
 
 uint16_t Drivers_SX1280GetMaxTryTimes(void)
 {
-	return G_SX1280_CFG.maxTryTimes;      //发送最大尝试次数
+    return G_SX1280_CFG.maxTryTimes;      //发送最大尝试次数
 }
 uint8_t Drivers_SX1280GetTxDoneFlag(void)
 {
-	return G_SX1280_CFG.txDoneFlag;                //发送完成标志
+    return G_SX1280_CFG.txDoneFlag;                //发送完成标志
 }
 void Drivers_SX1280SetTxDoneFlag(uint8_t txDoneFlag)
 {
-	 G_SX1280_CFG.txDoneFlag = txDoneFlag;
+    G_SX1280_CFG.txDoneFlag = txDoneFlag;
 }
 
+uint8_t Drivers_SX1280TestMode(void)
+{
+    char *m_sendBuf = "123";
+    uint8_t m_trySendTimes = 10;   //尝试10次
+    while(m_trySendTimes--)
+    {
+        Drivers_SX1280SendBuff((uint8_t*)&m_sendBuf,
+                               3);
+        if(Drivers_SX1280GetTxDoneFlag() == 0x5A)
+        {
+            Drivers_SX1280SetTxDoneFlag(0);
+            return 1;
+        }
+    }
+    return 0;
+}
 
 
 

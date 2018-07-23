@@ -1,19 +1,13 @@
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include "BerthPo_SX1280_ParkStateJudge.h"
 #include "BerthPo_SX1280_RM3100.h"
 #include "Drivers_RM3100.h"
 #include "BerthPo_SX1280_Common.h"
-#include "BerthPo_SX1280_Protocol.h"
 #include "Drivers_Led.h"
 #include "Sleep.h"
 #include "Crc.h"
-#include "BerthPo_SX1280_CompileFiles.h"
-#include "Delay.h"
 #include "Drivers_SX1280.h"
-
+#include "Delay.h"
 /***************引用外部变量******************/
 extern SBERTHPO_PARK_STATUS parkStatus;
 extern SCONTROL_CONFIG  controlConfig;
@@ -54,7 +48,7 @@ uint8_t BerthPo_BerthStateSwithProcess()
     static BERTH_STATE m_lastState =
         BERTHPO_PARK_STATE_NULL;             //历史车位状态
     BERTH_STATE currentState =
-        parkStatus.currentParkState;                      //当前车位状态
+        g_parkState;                      //当前车位状态
     SRM3100_SAMPLE_DATA
     rm3100SampleData;    //临时变量，用于缓存计算过程中的中间值
     //初始化状态判断输入参数
@@ -81,17 +75,19 @@ uint8_t BerthPo_BerthStateSwithProcess()
             //如果//当前车位状态与历史车位状态不符，则需要清除记录缓存区中的数据
             if (BERTHPO_PARK_STATE_HAVE == m_lastState)
             {
-                BerthPo_InitStatisSet(&sensorRm3100, &(sensorRm3100.rm3100MagneticBase));      // 无车磁场强度(地球磁场+环境磁场)
-                BerthPo_InitStatisSet(&sensorRm3100, &(sensorRm3100.rm3100MagneticDensity));	 // 车辆磁干扰_有车状态下使用
-                                      
+                BerthPo_InitStatisSet(&sensorRm3100, &
+                                      (sensorRm3100.rm3100MagneticBase));      // 无车磁场强度(地球磁场+环境磁场)
+                BerthPo_InitStatisSet(&sensorRm3100, &
+                                      (sensorRm3100.rm3100MagneticDensity));   // 车辆磁干扰_有车状态下使用
+
                 sensorRm3100.rm3100MagneticBaseLower.val = input.diffOfRM;
                 sensorRm3100.rm3100MagneticBaseLower.x = input.x;
                 sensorRm3100.rm3100MagneticBaseLower.y = input.y;
-                sensorRm3100.rm3100MagneticBaseLower.z = input.z;sensorRm3100.diffOfRM;
+                sensorRm3100.rm3100MagneticBaseLower.z = input.z;
             }
 
             // 统计当前数据，用于计算
-            BerthPo_StatisProcess(&rm3100SampleData,
+            BerthPo_StatisProcess(&sensorRm3100, &rm3100SampleData,
                                   &(sensorRm3100.rm3100MagneticBase), 1);
 
             // 保存最接近本底的无车统计值
@@ -126,21 +122,22 @@ uint8_t BerthPo_BerthStateSwithProcess()
             if (BerthPo_ChangeConfirm(&input) == STATE_REVERSAL)
             {
                 ret = STATE_REVERSAL;
-                parkStatus.currentParkState = BERTHPO_PARK_STATE_HAVE;
+                parkStatus.currentParkState = 1;
+                g_parkState = BERTHPO_PARK_STATE_HAVE;
             }
             break;
         case BERTHPO_PARK_STATE_HAVE:    //有车
             //如果当前车位状态与历史车位状态不符，则需要清除记录缓存区中的数据
             if (BERTHPO_PARK_STATE_NULL == m_lastState)
             {
-                BerthPo_InitStatisSet(&
+                BerthPo_InitStatisSet(&sensorRm3100, &
                                       (sensorRm3100.rm3100MagneticDensity));// 车辆磁干扰_有车状态下使用
                 memset(&(sensorRm3100.rm3100MagneticBaseLower), 0,
                        sizeof(SRM3100_MAGNETIC));
             }
 
             // 统计当前数据，用于计算
-            BerthPo_StatisProcess(&rm3100SampleData,
+            BerthPo_StatisProcess(&sensorRm3100, &rm3100SampleData,
                                   &(sensorRm3100.rm3100MagneticDensity), 1);
 
             // 记录最近一次停车统计状态
@@ -150,14 +147,14 @@ uint8_t BerthPo_BerthStateSwithProcess()
             if (BerthPo_ChangeConfirm(&input) == STATE_REVERSAL)
             {
                 ret = STATE_REVERSAL;
-
-                parkStatus.currentParkState = BERTHPO_PARK_STATE_NULL;
+                parkStatus.currentParkState = 0;
+                g_parkState = BERTHPO_PARK_STATE_NULL;
             }
             break;
         default:
             break;
     }
-    m_lastState = (BERTH_STATE) currentState;           //将当前状态保存到历史状态中
+    m_lastState = (BERTH_STATE)currentState;           //将当前状态保存到历史状态中
     sensorRm3100.clearBottomBufferFlag = 0;    //清本底缓存标志关闭
     return ret;
 }
@@ -184,7 +181,7 @@ void BerthPo_ChangeThresholdGet(uint8_t *thr1,
     uint8_t offset = 0;
     //有车或无车时，阈值设定不一致
     // 有车时
-    if (BERTHPO_PARK_STATE_HAVE == S_gParkState)
+    if (BERTHPO_PARK_STATE_HAVE == g_parkState)
     {
         offset = sensorRm3100.rm3100MagneticBase.val;
         offset = MIN_(offset, 10);
@@ -273,7 +270,7 @@ uint8_t BerthPo_ChangeJudge(InputInfo* pInput)
                                pInput);
 
     // 有车时
-    if (BERTHPO_PARK_STATE_HAVE == parkStatus.currentParkState)
+    if (BERTHPO_PARK_STATE_HAVE == g_parkState)
     {
         // range_RM 降幅
         if (MAGNETIC_STATE_NULL == sensorRm3100.rm3100MagneticDensity.state)
@@ -376,16 +373,16 @@ uint8_t BerthPo_ChangeJudge(InputInfo* pInput)
 
 
         // range_RM1 变化值(取与本底最相近的统计值，无统计值时参考与diff_nopark最大值)
-        range_RM1 = abs(sensorRm3100.rm3100MagneticBase.x - pInput->x) + \
-                    abs(sensorRm3100.rm3100MagneticBase.y - pInput->y) + \
-                    abs(sensorRm3100.rm3100MagneticBase.z - pInput->z);
-        if (MAGNETIC_STATE_CONFIRM != sensorRm3100.rm3100MagneticBase.state)
+        range_RM1 = abs(sensorRm3100.rm3100MagneticBaseLower.x - pInput->x) + \
+                    abs(sensorRm3100.rm3100MagneticBaseLower.y - pInput->y) + \
+                    abs(sensorRm3100.rm3100MagneticBaseLower.z - pInput->z);
+        if (MAGNETIC_STATE_CONFIRM != sensorRm3100.rm3100MagneticBaseLower.state)
         {
             range_RM1 = MAX_(diff_nopark, range_RM1);
         }
 
         // 本底偏移值
-        uint8_t bottomOffsetValue = BerthPo_GetBottomOffsetValue();
+        uint8_t bottomOffsetValue = BerthPo_GetBottomOffsetValue(&sensorRm3100);
         if (bottomOffsetValue == 0)
         {
             bottomOffsetValue = sensorRm3100.rm3100MagneticBase.val;
@@ -450,10 +447,10 @@ uint8_t BerthPo_ChangeConfirm(InputInfo* pInput)
         {
             Drivers_LedOff(LED_GPIO, 2);
             enableInterrupts();          //开中断,关中断动作在睡眠被唤醒后执行
-            BSP_RtcGoSleep(sleepTime);   //rtc睡眠时间
+            RTCAlarm_Set(sleepTime);   //rtc睡眠时间
             //BSP_RtcDeepSleep();          //进入睡眠
             BerthPo_GetRM3100Data();   //取地磁数据
-            BerthPo_EMDealGeomagneticValue;                //处理地磁数据
+            BerthPo_EMDealGeomagneticValue();                //处理地磁数据
 
             // 重新初始化input
             InputInfo input_temp = BerthPo_InitBerthStateInput();
@@ -498,7 +495,10 @@ uint8_t BerthPo_SendAlarmPackage(uint8_t frameType)
     BerthPo_MakeHead(&m_sendPackage);
     for(i = 0; i < 6; i++)
     {
-        m_sendPackage.packageHeader.deviceNumber[i] = controlConfig.nodeConfig.idNub[i];
+        m_sendPackage.packageHeader.deviceNumber[i] =
+            controlConfig.nodeConfig.idNumber[i];
+        m_sendPackage.packageHeader.keyNumber[i] =
+            controlConfig.nodeConfig.keyNumber[i];
     }
     m_sendPackage.packageHeader.frameType = frameType;
     m_sendPackage.txPayLoad[0] =
@@ -558,21 +558,30 @@ uint8_t BerthPo_SendAlarmPackage(uint8_t frameType)
         }
     }
     m_sendPackage.packageHeader.frameLens = 9 + 2;
-    uint8_t frameTotalLens = 12 + m_sendPackage.packageHeader.frameLens;
-    uint8_t m_sendBuf[9+2+12] = {0};
-    memcpy(m_sendBuf, (uint8_t *)&(m_sendPackage.packageHeader), sizeof(SFRAME_HEAD_TypeDef));
-    memcpy(m_sendBuf + sizeof(SFRAME_HEAD_TypeDef), (uint8_t *)m_sendPackage.txPayLoad, 9);
+    uint8_t frameTotalLens = 18 + m_sendPackage.packageHeader.frameLens;
+    uint8_t m_sendBuf[9 + 2 + 18] = {0};
+    memcpy(m_sendBuf, (uint8_t *) & (m_sendPackage.packageHeader),
+           sizeof(SFRAME_HEAD_TypeDef));
+    memcpy(m_sendBuf + sizeof(SFRAME_HEAD_TypeDef),
+           (uint8_t *)m_sendPackage.txPayLoad, 9);
     Calculate_Crc16((unsigned char *)m_sendBuf, frameTotalLens - 2);
     Drivers_LedOn(LED_GPIO, 2);
     uint8_t m_trySendTimes = SX1280_Operation.SX1280_GetMaxTryTimes();
     while(m_trySendTimes--)
     {
-       SX1280_Operation.SX1280_SendBuff((uint8_t*)&m_sendBuf,
-                                        frameTotalLens);
-        m_trySendTimes--;
+        SX1280_Operation.SX1280_SendBuff((uint8_t*)&m_sendBuf,
+                                         frameTotalLens);
         if(SX1280_Operation.SX1280_GetTxDoneFlag() == 0x5A)
         {
             SX1280_Operation.SX1280_SetTxDoneFlag(0);
+            for(uint8_t i = 0; i < 3; i++)   //数据发送成功LED1快速闪烁三次
+            {
+				Led_Operation.LedOn(LED_GPIO, 1);
+        Led_Operation.LedOn(LED_GPIO, 2);
+		DelayMs(1000);
+		Led_Operation.LedOff(LED_GPIO, 1);
+        Led_Operation.LedOff(LED_GPIO, 2);				
+            }
             return 1;
         }
         DelayMs(1);
@@ -646,7 +655,7 @@ uint8_t BerthPo_SendCarStatus(uint8_t frameType)
     if(parkStatus.currentParkState == 1)
     {
         controlConfig.paramConfig.alarmStatus =
-            controlConfig.paramConfig.alarmStatus | 0x0400;//有车
+            controlConfig.paramConfig.alarmStatus | 0x0400;   //有车
     }
     else
     {
@@ -692,13 +701,20 @@ void BerthPo_JudgeChangeOfModule()    //车辆状态反转判断
         while(m_sendCount > 0)
         {
             Led_Operation.LedOn(LED_GPIO, 1);
-            BerthPo_SendCarStatus(0x01);
+            if(BerthPo_SendCarStatus(0x01) == 0)   //如果不成功
+            {
+                tagConfigSymple.randomDelay = (((uint16_t)
+                                                sensorRm3100.rm3100CurrentData.EMDataCurrent_z) + ((uint16_t)
+                                                        sensorRm3100.rm3100CurrentData.EMDataCurrent_z) + ((uint16_t)
+                                                                sensorRm3100.rm3100CurrentData.EMDataCurrent_z)) %
+                                              256; //如果不成功，重新产生一个随机时间
+            }
             tagConfigSymple.sendNodeCount =
                 0;                                  //发送数据成功,重新计算发送间隔
             m_sendCount--;                          //发送失败重复3次
-            enableInterrupts();                                 //开中断,关中断动作在睡眠被唤醒后执行
-            //BSP_RtcGoSleep(2048);                               //rtc睡眠时间
-            //BSP_RtcDeepSleep();                                 //进入睡眠
+            enableInterrupts();                     //开中断,关中断动作在睡眠被唤醒后执行
+            BSP_RTCAlarmDelayMs(2000 + tagConfigSymple.randomDelay);   //rtc睡眠时间
+            BSP_RtcDeepSleep();                     //进入睡眠
         }
     }
     else                                                        //如果状态未翻转，则启动心跳检查程序
@@ -708,12 +724,18 @@ void BerthPo_JudgeChangeOfModule()    //车辆状态反转判断
             tagConfigSymple.sendPackCount)       //发包控制，达到心跳发包时间
         {
             Led_Operation.LedOff(LED_GPIO, 1);
-            enableInterrupts();                                 //发送消息前开中断
+            if(BerthPo_SendCarStatus(0x02) == 0)   //如果不成功
+            {
+                tagConfigSymple.randomDelay = (((uint16_t)
+                                                sensorRm3100.rm3100CurrentData.EMDataCurrent_z) + ((uint16_t)
+                                                        sensorRm3100.rm3100CurrentData.EMDataCurrent_z) + ((uint16_t)
+                                                                sensorRm3100.rm3100CurrentData.EMDataCurrent_z)) %
+                                              256; //如果不成功，重新产生一个随机时间
+            }
+            enableInterrupts();                              //发送消息前开中断
             BerthPo_SendCarStatus(0x02);                     //发送状态
             tagConfigSymple.sendNodeCount =
                 0;                         //发送数据成功,重新计算发送间隔
-            //NB_BC95.nb_recv_data.receive_status |= 0x80;
-            //NB_BC95.nb_recv_data.receive_cnt = 0;
         }
     }
 }

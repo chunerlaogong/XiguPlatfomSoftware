@@ -5,7 +5,6 @@
 #include "BerthPo_SX1280_StatisMagneticDensity.h"
 #include "BerthPo_SX1280_Common.h"
 #include "BerthPo_SX1280_CompileFiles.h"
-#include <math.h>
 /*********************引用外部变量*****************/
 
 extern SBERTHPO_PARK_STATUS parkStatus;

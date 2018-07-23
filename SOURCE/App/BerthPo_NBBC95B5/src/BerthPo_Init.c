@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Drivers_BC95.h"
+#include "Drivers_NFC.h"
+#include "BerthPo_Common.h"
 /***********************引用变量************************/
 extern SCONTROL_CONFIG  controlConfig;
 extern SNET_MUTUAL_INFO  netMutualInfo;
@@ -14,7 +16,7 @@ extern SSENSOR_RM3100 sensorRm3100;
 extern BT_I410ES_OPERATION_TypeDef BT_I410ES_Operation;
 extern SBC95_GPIO_TypeDef     BC95_GPIO;
 extern SCONTROL_SYMPLE tagConfigSymple;
-
+extern NFC_OPERATION_TypeDef NFC_Operation;
 /*******************************************************************************
 * Function Name : BerthPo_InitMcu()
 * Description   : 泊位宝Mcu初始化
@@ -33,7 +35,7 @@ void BerthPo_InitMcu()
     BTI410ES_GPIO.BT_POWER_GPIO_BASE = GPIOE;
     BTI410ES_GPIO.BT_POWER_GPIO_Pin = GPIO_Pin_1;
     BT_I410ES_Operation.BT_I410ES_PowerOn(&BTI410ES_GPIO);
-    BerthPo_BtInit();
+    BerthPo_BTInit();
     //初始化地磁
     RM3100_GPIO.MEG_PRW1_GPIO_BASE =
         GPIOC;             //PC2/PC3/PC4-设置为输出,地磁供电
@@ -68,9 +70,9 @@ void BerthPo_InitMcu()
     BC95_GPIO.BC95_PWR_PIN = GPIO_Pin_0;
     BC95_GPIO.BC95_RESET_BASE = GPIOD;
     BC95_GPIO.BC95_RESET_PIN = GPIO_Pin_7;
-	BC95_GPIO.Type = UDP;              //UDP/COAP发送数据
-	BC95_GPIO.maxTryCount = 3;         //最大尝试3次
-	BC95_GPIO.sendTimes   = 3;         //有效发送次数
+    BC95_GPIO.Type = UDP;              //UDP/COAP发送数据
+    BC95_GPIO.maxTryCount = 3;         //最大尝试3次
+    BC95_GPIO.sendTimes   = 3;         //有效发送次数
     BC95_GPIO.COM.USARTNum = USART1;
     BC95_GPIO.COM.CLKPeripheralNum = CLK_Peripheral_USART1;
     BC95_GPIO.COM.UART_TX_GPIO_BASE = GPIOA;
@@ -82,6 +84,10 @@ void BerthPo_InitMcu()
     BC95_GPIO.COM.stop = 1;
     BC95_GPIO.COM.parity = 0;
     Drivers_BC95_Operation.PowerOn(&BC95_GPIO);
+    //初始化NFC
+    NFC_Operation.NFC_CallBack = BerthPo_NFCCallBack;
+    NFC_Operation.NFC_NFCInit();
+    NFC_Operation.NFC_PowerOn();
     //初始化调试串口
     /*SBSP_UART_CFG_TypeDef m_debugUartConfig;
     m_debugUartConfig.USARTNum = USART1;
@@ -110,7 +116,7 @@ void BerthPo_InitMcu()
 
 void BerthPo_InitSysParam()
 {
-    DelayMs(200);
+    BerthPo_ReadParamFromFlash();
     uint32_t m_tagId = 2005;
     if(netMutualInfo.paraIntFlag[0] == 0x5A
        && netMutualInfo.paraIntFlag[1] == 0xA5
@@ -120,12 +126,12 @@ void BerthPo_InitSysParam()
     }
     else
     {
-        controlConfig.workStatus = BERTHPO_MODE_ACTIVE;        //ACTIVATE;
+        controlConfig.workMode = BERTHPO_MODE_FACTORY;        //ACTIVATE;
         controlConfig.initNB = 0x01;
         controlConfig.nodeConfig.idNub[0] = (m_tagId & 0xFF);    //初始化泊位宝ID
         controlConfig.nodeConfig.idNub[1] = (m_tagId >> 8) & 0xff;
         controlConfig.nodeConfig.idNub[2] = (m_tagId >> 16) & 0xff;
-     //   controlConfig.nodeConfig.userCode = 10025;             //初始化userCode
+        //   controlConfig.nodeConfig.userCode = 10025;             //初始化userCode
         controlConfig.paramConfig.alarmValid =
             0x4C00;    //有效标志,第10位有车，第11位无车，第14位频繁快速唤醒报警
         controlConfig.nodeConfig.ledFlag = 0;             //led开启状态

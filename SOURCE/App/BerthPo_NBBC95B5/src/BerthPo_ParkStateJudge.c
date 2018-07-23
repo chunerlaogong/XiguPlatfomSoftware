@@ -12,6 +12,7 @@
 #include "Crc.h"
 #include "BerthPo_CompileFiles.h"
 #include "Drivers_SX1280.h"
+#include "BSP_RTC.h"
 /***************引用外部变量******************/
 extern SBERTHPO_PARK_STATUS parkStatus;
 extern SCONTROL_CONFIG  controlConfig;
@@ -451,7 +452,7 @@ uint8_t BerthPo_ChangeConfirm(InputInfo* pInput)
         {
             Drivers_LedOff(LED_GPIO, 2);
             enableInterrupts();          //开中断,关中断动作在睡眠被唤醒后执行
-            BSP_RtcGoSleep(sleepTime);   //rtc睡眠时间
+            RTCAlarm_Set(sleepTime);   //rtc睡眠时间
             //BSP_RtcDeepSleep();          //进入睡眠
             BerthPo_GetRM3100Data();   //取地磁数据
             BerthPo_EMDealGeomagneticValue();                //处理地磁数据
@@ -690,7 +691,7 @@ void BerthPo_JudgeChangeOfModule()    //车辆状态反转判断
                 0;                                  //发送数据成功,重新计算发送间隔
             m_sendCount--;                          //发送失败重复3次
             enableInterrupts();                                 //开中断,关中断动作在睡眠被唤醒后执行
-            //BSP_RtcGoSleep(2048);                               //rtc睡眠时间
+            //RTCAlarm_Set(2048);                               //rtc睡眠时间
             //BSP_RtcDeepSleep();                                 //进入睡眠
         }
     }
