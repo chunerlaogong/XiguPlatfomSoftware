@@ -239,9 +239,9 @@ ErrorStatus BerthPo_DealBTData(uint8_t *btRxbuf)
             BerthPo_WriteParamToFlash();
             break;
         case 0x08:    //获取泊位宝ID
-            pFeedBack->commandData[0] = controlConfig.nodeConfig.idNub[0];
-            pFeedBack->commandData[1] = controlConfig.nodeConfig.idNub[1];
-            pFeedBack->commandData[2] = controlConfig.nodeConfig.idNub[2];
+            pFeedBack->commandData[0] = controlConfig.nodeConfig.idNumber[0];
+            pFeedBack->commandData[1] = controlConfig.nodeConfig.idNumber[1];
+            pFeedBack->commandData[2] = controlConfig.nodeConfig.idNumber[2];
             pFeedBack->frameLength = 3 + 2;
             m_frameLenTemp = pFeedBack->frameLength + 3;
             Calculate_Crc16((uint8_t *)&pFeedBack->framePrefix0, m_frameLenTemp);
@@ -249,9 +249,9 @@ ErrorStatus BerthPo_DealBTData(uint8_t *btRxbuf)
             BT_I410ES_Operation.BT_I410ES_Write((uint8_t*)pFeedBack, m_sendFrameLenTemp);
             break;
         case 0x09:    //设置泊位宝ID
-            controlConfig.nodeConfig.idNub[0] = pBT_rcvData->commandData[0];
-            controlConfig.nodeConfig.idNub[1] = pBT_rcvData->commandData[1];
-            controlConfig.nodeConfig.idNub[2] = pBT_rcvData->commandData[2];
+            controlConfig.nodeConfig.idNumber[0] = pBT_rcvData->commandData[0];
+            controlConfig.nodeConfig.idNumber[1] = pBT_rcvData->commandData[1];
+            controlConfig.nodeConfig.idNumber[2] = pBT_rcvData->commandData[2];
             pFeedBack->commandData[0] = 0x01;
             pFeedBack->frameLength = 1 + 2;
             m_frameLenTemp = pFeedBack->frameLength + 3;

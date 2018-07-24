@@ -202,7 +202,7 @@ void ASSERT_FAILED(uint8_t* file, uint32_t line)
 {
     uint8_t flg = 1;
 
-    printf("wrong information 文件:%s 第%d行\r\n", file, line);
+    //printf("wrong information 文件:%s 第%d行\r\n", file, line);
     while (flg);
 }
 

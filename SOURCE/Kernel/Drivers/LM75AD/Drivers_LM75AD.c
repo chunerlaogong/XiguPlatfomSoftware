@@ -52,7 +52,7 @@ int16_t LM75AD_GetTemp(void)
     {
         LM75AD_Temp = LM75AD_Temp *125;
     }
-    printf("LM75AD获取到的温度:%d\r\n" , LM75AD_Temp);
+    //printf("LM75AD获取到的温度:%d\r\n" , LM75AD_Temp);
     return LM75AD_Temp;
 }
 

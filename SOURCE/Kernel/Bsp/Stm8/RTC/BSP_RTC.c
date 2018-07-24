@@ -47,10 +47,10 @@ void ShowTime(void)
     while (RTC_WaitForSynchro() != SUCCESS);    // wait the Calander sychonized
     RTC_GetTime(RTC_Format_BIN, &RTCGetTime);
     RTC_GetDate(RTC_Format_BIN, &RTCGetDate);
-    printf("日期:%d-%d-%d", RTCGetDate.RTC_Year, RTCGetDate.RTC_Month,
-           RTCGetDate.RTC_Date);
-    printf("时间:%d:%d:%d\r\n", RTCGetTime.RTC_Hours, RTCGetTime.RTC_Minutes,
-           RTCGetTime.RTC_Seconds);
+    //printf("日期:%d-%d-%d", RTCGetDate.RTC_Year, RTCGetDate.RTC_Month,
+    //       RTCGetDate.RTC_Date);
+    //printf("时间:%d:%d:%d\r\n", RTCGetTime.RTC_Hours, RTCGetTime.RTC_Minutes,
+    //       RTCGetTime.RTC_Seconds);
 }
 /*******************************************************************************
 * Function Name : void SetDateAndTime(uint8_t Year,uint8_t Month,uint8_t Day,uint8_t Hour,uint8_t Minute,uint8_t Second)

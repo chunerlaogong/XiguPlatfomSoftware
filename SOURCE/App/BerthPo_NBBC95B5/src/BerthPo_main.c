@@ -54,25 +54,35 @@ extern BT_I410ES_OPERATION_TypeDef BT_I410ES_Operation;
 *******************************************************************************/
 int main(void)
 {
-    disableInterrupts();                               //关全局中断
+    disableInterrupts();               //关全局中断
     BerthPo_InitMcu();                 //初始化泊位宝MCU
-    enableInterrupts();
     BerthPo_InitSysParam();
-    enableInterrupts();	
+    enableInterrupts();
+#if SX1280_TEST_MODE
+    uint8_t m_SX1280TestData[9] = {2, 3, 4};
     while(1)
     {
-        if(controlConfig.workMode == BERTHPO_MODE_FACTORY)   //开机默认进入产测模式
+        DelayMs(500);
+        SX1280_Operation.SX1280_SendBuff(m_SX1280TestData, 3);
+    }
+#endif
+    while(1)
+    {
+        //memset(&netMutualInfo, 0, sizeof(netMutualInfo));
+        //memset(&controlConfig, 0, sizeof(controlConfig));
+        //BerthPo_WriteParamToFlash();
+        while(controlConfig.workMode == BERTHPO_MODE_FACTORY)   //开机默认进入产测模式
         {
             if(BerthPo_FactoryTest() == 1)   //产测测试通过
             {
-                controlConfig.workMode = BERTHPO_MODE_DEEP_SLEEP;
+                controlConfig.workMode = BERTHPO_MODE_DEEP_SLEEP;   //产测通过进入深度睡眠模式
                 BerthPo_WriteParamToFlash();   //保存产测通过标志
+                BerthPo_DeepSleep();           //进入深度睡眠状态
             }
-
         }
         while(controlConfig.workMode == BERTHPO_MODE_ACTIVE)
         {
-            BerthPo_WakeFromSleep();                   //车位状态判断
+            BerthPo_WakeFromSleep();   //车位状态判断
             BerthPo_Sleep();
         }
     }

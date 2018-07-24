@@ -69,7 +69,7 @@ void Sx1280_PwrCfgInfo()
     G_tSx1280RegCfgInfo .dio3Mask = IRQ_RADIO_NONE;
     G_tSx1280RegCfgInfo .RXTimeOut.Step = RADIO_TICK_SIZE_1000_US;
     G_tSx1280RegCfgInfo .RXTimeOut.NbSteps =
-        0xFFFF;//0000只接收一次，0xFFFF为持续接政
+        0xFFFF;//0000只接收一次，0xFFFF为持续接收
     //初始化G_SX1280_CFG
     G_SX1280_CFG.maxTryTimes = 3;   //RF发送最大尝试次数
 }

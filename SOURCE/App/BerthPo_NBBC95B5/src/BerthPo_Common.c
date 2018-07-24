@@ -3,6 +3,7 @@
 #include "Drivers_LED.h"
 #include "Drivers_NFC.h"
 #include "Drivers_RM3100.h"
+#include "BSP_RTC.h"
 /******************引用外部变量******************/
 extern SBERTHPO_PARK_STATUS parkStatus;
 extern SCONTROL_CONFIG  controlConfig;
@@ -44,14 +45,20 @@ uint8_t BerthPo_FactoryTest(void)
 
 void BerthPo_WriteParamToFlash()
 {
-    netMutualInfo.idNub[0] = controlConfig.nodeConfig.idNub[0];  //保存ID
-    netMutualInfo.idNub[1] = controlConfig.nodeConfig.idNub[1];
-    netMutualInfo.idNub[2] = controlConfig.nodeConfig.idNub[2];
-    netMutualInfo.idNub[3] = controlConfig.nodeConfig.idNub[3];  //保存ID
-    netMutualInfo.idNub[4] = controlConfig.nodeConfig.idNub[4];
-    netMutualInfo.idNub[5] = controlConfig.nodeConfig.idNub[5];
+	netMutualInfo.workMode = controlConfig.workMode;
+    netMutualInfo.idNumber[0] = controlConfig.nodeConfig.idNumber[0];  //保存UID
+    netMutualInfo.idNumber[1] = controlConfig.nodeConfig.idNumber[1];
+    netMutualInfo.idNumber[2] = controlConfig.nodeConfig.idNumber[2];
+    netMutualInfo.idNumber[3] = controlConfig.nodeConfig.idNumber[3]; 
+    netMutualInfo.idNumber[4] = controlConfig.nodeConfig.idNumber[4];
+    netMutualInfo.idNumber[5] = controlConfig.nodeConfig.idNumber[5];
+    netMutualInfo.keyNumber[0] = controlConfig.nodeConfig.keyNumber[0];  //保存UID
+    netMutualInfo.keyNumber[1] = controlConfig.nodeConfig.keyNumber[1];
+    netMutualInfo.keyNumber[2] = controlConfig.nodeConfig.keyNumber[2];
+    netMutualInfo.keyNumber[3] = controlConfig.nodeConfig.keyNumber[3]; 
+    netMutualInfo.keyNumber[4] = controlConfig.nodeConfig.keyNumber[4];
+    netMutualInfo.keyNumber[5] = controlConfig.nodeConfig.keyNumber[5];
     netMutualInfo.ledFlag  = controlConfig.nodeConfig.ledFlag;
-    netMutualInfo.workMode = controlConfig.workMode;
     netMutualInfo.wdtInterval = controlConfig.paramConfig.wdtInterval;
     netMutualInfo.heartbeatInterval =
         controlConfig.paramConfig.heartbeatInterval;
@@ -92,13 +99,19 @@ void BerthPo_ReadParamFromFlash()
     ReadParamFromEEPROM((uint8_t*)(&netMutualInfo),
                                 &m_writeLen,
                                 &m_addr);
-    controlConfig.workMode =  netMutualInfo.workMode;
-    controlConfig.nodeConfig.idNub[0] = netMutualInfo.idNub[0] ;  //保存ID
-    controlConfig.nodeConfig.idNub[1] = netMutualInfo.idNub[1] ;  //保存ID
-    controlConfig.nodeConfig.idNub[2] = netMutualInfo.idNub[2] ;  //保存ID
-    controlConfig.nodeConfig.idNub[3] = netMutualInfo.idNub[3] ;  //保存ID
-    controlConfig.nodeConfig.idNub[4] = netMutualInfo.idNub[4] ;  //保存ID
-    controlConfig.nodeConfig.idNub[5] = netMutualInfo.idNub[5] ;  //保存ID
+	controlConfig.workMode =  netMutualInfo.workMode;
+    controlConfig.nodeConfig.idNumber[0] = netMutualInfo.idNumber[0] ;  //读取UID
+    controlConfig.nodeConfig.idNumber[1] = netMutualInfo.idNumber[1] ;  
+    controlConfig.nodeConfig.idNumber[2] = netMutualInfo.idNumber[2] ; 
+    controlConfig.nodeConfig.idNumber[3] = netMutualInfo.idNumber[3] ;  
+    controlConfig.nodeConfig.idNumber[4] = netMutualInfo.idNumber[4] ;  
+    controlConfig.nodeConfig.idNumber[5] = netMutualInfo.idNumber[5] ;
+	controlConfig.nodeConfig.keyNumber[0] = netMutualInfo.keyNumber[0] ;  //读取UID
+    controlConfig.nodeConfig.keyNumber[1] = netMutualInfo.keyNumber[1] ;  
+    controlConfig.nodeConfig.keyNumber[2] = netMutualInfo.keyNumber[2] ; 
+    controlConfig.nodeConfig.keyNumber[3] = netMutualInfo.keyNumber[3] ;  
+    controlConfig.nodeConfig.keyNumber[4] = netMutualInfo.keyNumber[4] ;  
+    controlConfig.nodeConfig.keyNumber[5] = netMutualInfo.keyNumber[5] ;  
     controlConfig.nodeConfig.ledFlag =  netMutualInfo.ledFlag;  
     controlConfig.paramConfig.wdtInterval =  netMutualInfo.wdtInterval;  
     controlConfig.paramConfig.heartbeatInterval =
@@ -187,8 +200,8 @@ void BerthPo_GetRM3100Data()
     RM3100_Operation.RM3100_PowerOn(&(RM3100_GPIO));
     DelayMs(100);                       //上电延时等待R3100准备，小于30us读出数据错误，典型值200us
     enableInterrupts();   //开中断,关中断动作在睡眠被唤醒后执行
-    BSP_RtcGoSleep(30);   //rtc睡眠时间,15ms
-    //  BSP_RtcDeepSleep();
+    RTCAlarm_Set(20);     //rtc睡眠时间,20ms
+    BSP_RtcDeepSleep();
     //RM3100_Operation.RM3100_McuRdRyOff(RM3100_GPIO);        //关地磁芯片中断输入
     //RM3100_Operation.RM3100_McuRdRyOn(RM3100_GPIO);         //开地磁芯片中断输入
     RM3100_Operation.RM3100_SetMeaureMode(&(RM3100_GPIO), 1);  //设置单一测量模式*/
@@ -383,10 +396,6 @@ uint8_t BerthPo_FixedVCheck()         //固定值判断车位状态
     return ValueWeight;
 }
 
-void BerthPo_NFCCallBack()
-{
-	controlConfig.workMode = BERTHPO_MODE_ACTIVE;
-}
 
 
 

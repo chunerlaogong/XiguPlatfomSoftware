@@ -55,7 +55,7 @@
             <file>$PROJ_DIR$\Debug\Obj\Drivers_NFC.pbi</file>
             <file>$PROJ_DIR$\Debug\Obj\BSP_RTC.pbi</file>
             <file>$PROJ_DIR$\Debug\Obj\BSP_TIM.o</file>
-            <file>$PROJ_DIR$\..\..\..\SOURCE\Kernel\Drivers\include\Drivers_Led.h</file>
+            <file>$PROJ_DIR$\..\..\..\SOURCE\Kernel\Drivers\include\Drivers_LED.h</file>
             <file>$PROJ_DIR$\Debug\Obj\BerthPo_ParkStateJudge.__cstat.et</file>
             <file>$PROJ_DIR$\Debug\Obj\BSP_UART.o</file>
             <file>$PROJ_DIR$\Debug\Obj\BSP_SPI.o</file>
@@ -1396,7 +1396,7 @@
                 </tool>
                 <tool>
                     <name>BICOMP</name>
-                    <file> 281 119 118 61 136 56 187 128 321 283 101 105 79 133 205 185 90 198 197 196 151 207 240 241 160 175 58 200 156 266 76 182 117 92 287</file>
+                    <file> 119 151 156 160 117 281 197 240 58 76 321 196 207 241 175 200 266 182 198 283 101 105 79 56 133 61 205 187 118 185 128 90 136 92 287</file>
                 </tool>
             </inputs>
         </file>
@@ -1504,7 +1504,7 @@
                 </tool>
                 <tool>
                     <name>BICOMP</name>
-                    <file> 316 105 270 283 119 92 133 90 120 101 79 205 185 235 300 281 56 61 187 118 128 136 219 72 89 123 304 275 50 287 197 196 151 207 240 241 160 175 58 200 156 266 76 182 117 186 218 69 254 184 313 86 204 265 62 109 268 134 102 180 193 143 198</file>
+                    <file> 304 196 268 200 219 241 182 204 120 207 175 266 119 102 193 300 197 151 240 160 58 156 76 117 50 123 270 92 287 101 105 281 79 56 133 61 205 187 283 118 185 128 90 136 265 62 109 134 313 180 316 143 198 86 186 218 69 72 254 89 184 235 275</file>
                 </tool>
             </inputs>
         </file>

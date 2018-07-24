@@ -30,7 +30,7 @@ void BerthPo_Sleep(void)
 void BerthPo_DeepSleep()
 {
     //产测模式通过，LED1和LED2闪烁5次后，进入深度睡眠
-    for(int i = 0; i < 5; i++)
+    for(int i = 0; i < 3; i++)
     {
         Led_Operation.LedOn(LED_GPIO, 1);
         Led_Operation.LedOn(LED_GPIO, 2);
@@ -71,8 +71,11 @@ void BerthPo_WakeFromSleep()
 }
 void BerthPo_NFCCallBack()
 {
-    controlConfig.workMode = BERTHPO_MODE_ACTIVE;    //设备已经激活,LED1闪烁5次
-    for(uint8_t i = 0; i < 5; i++)
+    controlConfig.workMode = BERTHPO_MODE_ACTIVE;   
+	//设备激活以后，关闭中断引脚，防止多次激活
+	NFC_Operation.NFC_PowerOff();
+	//设备已经激活,LED1闪烁3次
+    for(uint8_t i = 0; i < 3; i++)
     {
         Led_Operation.LedOn(LED_GPIO, 1);
         DelayMs(500);
@@ -81,7 +84,7 @@ void BerthPo_NFCCallBack()
     }
     if(BerthPo_FactoryTest() == 1)   //开机自检测试通过，LED2闪烁5次
     {
-        for(uint8_t i = 0; i < 5; i++)
+        for(uint8_t i = 0; i < 3; i++)
         {
             Led_Operation.LedOn(LED_GPIO, 2);
             DelayMs(500);

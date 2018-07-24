@@ -28,18 +28,19 @@ typedef enum
 //枚举工作模式
 typedef enum
 {
-    BERTHPO_MODE_FACTORY = 1,       //产测模式
-	BERTHPO_MODE_DEEP_SLEEP,        //深度休眠模式
-    BERTHPO_MODE_ACTIVE,            //激活正常工作模   
+    BERTHPO_MODE_FACTORY = 0xC5,       //产测模式
+	BERTHPO_MODE_DEEP_SLEEP = 0xB5,    //深度休眠模式
+	BERTHPO_MODE_SELF_TEST = 0xD5,     //开机自检模式
+    BERTHPO_MODE_ACTIVE = 0xA5,        //激活正常工作模   
 } BERTHPO_MODE;
 
 typedef struct
 {
-	uint8_t workMode;              //工作模式
+    uint8_t workMode;              //工作模式
     uint8_t initNB;
     uint16_t userCode;
-     uint8_t  idNub[6];     //UID 
-	uint8_t  keyNum[6];    //KEY
+    uint8_t  idNumber[6];     //UID
+    uint8_t  keyNumber[6];    //KEY
     uint8_t updateFlag;
     uint8_t version;
     uint16_t wdtInterval;          //WDT睡眠时间
@@ -86,8 +87,8 @@ typedef struct
 } *PPARAM_CONFIG, SPARAM_CONFIG;
 typedef struct
 {
-    uint8_t  idNumber[6];     //UID 
-	uint8_t  keyNumber[6];    //KEY
+    uint8_t  idNumber[6];     //UID
+    uint8_t  keyNumber[6];    //KEY
     uint8_t  ledFlag;    //led开关标志，取系统灯配置
     uint8_t  mcuSleepFlag;
 }*PNODE_CONFIG, SNODE_CONFIG;
@@ -107,7 +108,7 @@ typedef struct
 typedef struct
 {
 
-    
+
     uint8_t batteryCheckCount;
     int32_t batteryCount;              //电池计量周期
     uint32_t sendPackCount;
@@ -118,7 +119,7 @@ typedef struct
     uint8_t  debugInfoFlag;            //调试信息标志
     uint8_t  outBottomFlag;            //输出本底标志,0--手动校准本底，1--动态本底
     uint8_t  startUpGetBottom;         //系统开机获取本地标志
-    uint8_t txBuffer[NB_TX_BUFFER_SIZE];   
+	uint16_t randomDelay;              //随机延时时间
 } *PCONTROL_SYMPLE, SCONTROL_SYMPLE;
 
 /************************函数声明*********************/
@@ -131,6 +132,5 @@ void BerthPo_GetRM3100Data();
 uint8_t BerthPo_SetRm3100Base();
 void BerthPo_EMDealGeomagneticValue();   //处理地磁数据
 uint8_t BerthPo_FixedVCheck();           //固定值判断车位状态
-void BerthPo_NFCCallBack();    //NFC回调函数
 
 #endif   //_BERTHPO_COMMON_H_

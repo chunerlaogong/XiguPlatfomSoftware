@@ -127,7 +127,7 @@ uint8_t BerthPo_BerthStateSwithProcess()
             if (BerthPo_ChangeConfirm(&input) == STATE_REVERSAL)
             {
                 ret = STATE_REVERSAL;
-				parkStatus.currentParkState = 1;
+                parkStatus.currentParkState = 1;
                 g_parkState = BERTHPO_PARK_STATE_HAVE;
             }
             break;
@@ -152,7 +152,7 @@ uint8_t BerthPo_BerthStateSwithProcess()
             if (BerthPo_ChangeConfirm(&input) == STATE_REVERSAL)
             {
                 ret = STATE_REVERSAL;
-				parkStatus.currentParkState = 0;
+                parkStatus.currentParkState = 0;
                 g_parkState = BERTHPO_PARK_STATE_NULL;
             }
             break;
@@ -500,24 +500,24 @@ uint8_t BerthPo_SendAlarmPackage(uint8_t frameType)
     BerthPo_MakeHead(&m_sendPackage);
     for(i = 0; i < 6; i++)
     {
-        m_sendPackage.packageHeader.deviceNumber[i] = controlConfig.nodeConfig.idNub[i];
+        m_sendPackage.packageHeader.deviceNumber[i] = controlConfig.nodeConfig.idNumber[i];
     }
-	m_sendPackage.packageHeader.frameType = frameType;
+    m_sendPackage.packageHeader.frameType = frameType;
     m_sendPackage.txPayLoad[0] =
         controlConfig.paramConfig.alarmValid;        //有效状态
     m_sendPackage.txPayLoad[1] = controlConfig.paramConfig.alarmValid >>
-                              8;     //有效状态
+                                 8;     //有效状态
     m_sendPackage.txPayLoad[2] =
         controlConfig.paramConfig.alarmStatus;      //车状态
     m_sendPackage.txPayLoad[3] = controlConfig.paramConfig.alarmStatus >>
-                               8;   //车状态
+                                 8;   //车状态
 
     m_sendPackage.txPayLoad[4] = ((uint8_t)(
-                                    sensorRm3100.rm3100CurrentData.EMDataCurrent_x));   //x实时值
+                                      sensorRm3100.rm3100CurrentData.EMDataCurrent_x));   //x实时值
     m_sendPackage.txPayLoad[5] = ((uint8_t)(
-                                    sensorRm3100.rm3100CurrentData.EMDataCurrent_y));//y实时值
+                                      sensorRm3100.rm3100CurrentData.EMDataCurrent_y));//y实时值
     m_sendPackage.txPayLoad[6] = ((uint8_t)(
-                                    sensorRm3100.rm3100CurrentData.EMDataCurrent_z));//z实时值
+                                      sensorRm3100.rm3100CurrentData.EMDataCurrent_z));//z实时值
     m_sendPackage.txPayLoad[7] = ((uint8_t)((sensorRm3100.diffOfRM))); //模差
     switch (m_sendPackage.txPayLoad[10] >> 6)
     {
@@ -532,37 +532,39 @@ uint8_t BerthPo_SendAlarmPackage(uint8_t frameType)
         {
             if (tagConfigSymple.outBottomFlag == 0)
                 m_sendPackage.txPayLoad[8] = ((uint8_t)(
-                                                controlConfig.paramConfig.EMDataBottom_x));     //x固定本底值
+                                                  controlConfig.paramConfig.EMDataBottom_x));     //x固定本底值
             else
                 m_sendPackage.txPayLoad[8] = ((uint8_t)(
-                                                sensorRm3100.rm3100DynamicBoottom.EMDataBottom_x));                        //x动态本底值
+                                                  sensorRm3100.rm3100DynamicBoottom.EMDataBottom_x));                        //x动态本底值
             break;
         }
         case 2:
         {
             if (tagConfigSymple.outBottomFlag == 0)
                 m_sendPackage.txPayLoad[8] = ((uint8_t)(
-                                                controlConfig.paramConfig.EMDataBottom_y));     //y固定本底值
+                                                  controlConfig.paramConfig.EMDataBottom_y));     //y固定本底值
             else
                 m_sendPackage.txPayLoad[8] = ((uint8_t)(
-                                                sensorRm3100.rm3100DynamicBoottom.EMDataBottom_y));   //y动态本底值
+                                                  sensorRm3100.rm3100DynamicBoottom.EMDataBottom_y));   //y动态本底值
             break;
         }
         case 3:
         {
             if (tagConfigSymple.outBottomFlag == 0)
                 m_sendPackage.txPayLoad[8] = ((uint8_t)(
-                                                controlConfig.paramConfig.EMDataBottom_z));//y固定本底值
+                                                  controlConfig.paramConfig.EMDataBottom_z));//y固定本底值
             else
                 m_sendPackage.txPayLoad[8] = ((uint8_t)(
-                                                sensorRm3100.rm3100DynamicBoottom.EMDataBottom_z));//y动态本底值
+                                                  sensorRm3100.rm3100DynamicBoottom.EMDataBottom_z));//y动态本底值
             break;
         }
     }
     uint8_t frameTotalLens = 12 + m_sendPackage.packageHeader.frameLens;
-    uint8_t m_sendBuf[9+2+12] = {0};
-    memcpy(m_sendBuf, (uint8_t *)&(m_sendPackage.packageHeader), sizeof(SFRAME_HEAD_TypeDef));
-    memcpy(m_sendBuf + sizeof(SFRAME_HEAD_TypeDef), (uint8_t *)m_sendPackage.txPayLoad, 9);
+    uint8_t m_sendBuf[9 + 2 + 12] = {0};
+    memcpy(m_sendBuf, (uint8_t *) & (m_sendPackage.packageHeader),
+           sizeof(SFRAME_HEAD_TypeDef));
+    memcpy(m_sendBuf + sizeof(SFRAME_HEAD_TypeDef),
+           (uint8_t *)m_sendPackage.txPayLoad, 9);
     Calculate_Crc16((unsigned char *)m_sendBuf, frameTotalLens - 2);
     Drivers_LedOn(LED_GPIO, 2);
     /*if(Drivers_BC95_Operation.SocketSendData(&BC95_GPIO, m_sendBuf,
@@ -674,7 +676,6 @@ uint8_t BerthPo_SendCarStatus(uint8_t frameType)
 
 void BerthPo_JudgeChangeOfModule()    //车辆状态反转判断
 {
-
     uint8_t m_sendCount =
         3;                                                //发送次数 默认发送3次
     enableInterrupts();
@@ -682,32 +683,42 @@ void BerthPo_JudgeChangeOfModule()    //车辆状态反转判断
     if (BerthPo_BerthStateSwithProcess() == STATE_REVERSAL)
     {
         tagConfigSymple.debugInfoFlag = 0;
-        printf("car state reversal...\r\n");
+        //printf("car state reversal...\r\n");
         while(m_sendCount > 0)
         {
-            Led_Operation.LedOn(LED_GPIO, 1);
-            BerthPo_SendCarStatus(0x01);
+            if(BerthPo_SendCarStatus(0x01) == 0)   //如果不成功
+            {
+                tagConfigSymple.randomDelay = (((uint16_t)
+                                                sensorRm3100.rm3100CurrentData.EMDataCurrent_z) + ((uint16_t)
+                                                        sensorRm3100.rm3100CurrentData.EMDataCurrent_z) + ((uint16_t)
+                                                                sensorRm3100.rm3100CurrentData.EMDataCurrent_z)) %
+                                              256; //如果不成功，重新产生一个随机时间
+            }
             tagConfigSymple.sendNodeCount =
                 0;                                  //发送数据成功,重新计算发送间隔
             m_sendCount--;                          //发送失败重复3次
-            enableInterrupts();                                 //开中断,关中断动作在睡眠被唤醒后执行
-            //RTCAlarm_Set(2048);                               //rtc睡眠时间
-            //BSP_RtcDeepSleep();                                 //进入睡眠
+            enableInterrupts();                     //开中断,关中断动作在睡眠被唤醒后执行
+            BSP_RTCAlarmDelayMs(2000 + tagConfigSymple.randomDelay);   //rtc睡眠时间
+            BSP_RtcDeepSleep();                     //进入睡眠
         }
     }
     else                                                        //如果状态未翻转，则启动心跳检查程序
     {
-        printf("car state not reversal...\r\n");
+        //printf("car state not reversal...\r\n");
         if ((++tagConfigSymple.sendNodeCount) >=
             tagConfigSymple.sendPackCount)       //发包控制，达到心跳发包时间
         {
-            Led_Operation.LedOff(LED_GPIO, 1);
-            enableInterrupts();                                 //发送消息前开中断
-            BerthPo_SendCarStatus(0x02);                     //发送状态
+            if(BerthPo_SendCarStatus(0x02) == 0)   //如果不成功
+            {
+                tagConfigSymple.randomDelay = (((uint16_t)
+                                                sensorRm3100.rm3100CurrentData.EMDataCurrent_z) + ((uint16_t)
+                                                        sensorRm3100.rm3100CurrentData.EMDataCurrent_z) + ((uint16_t)
+                                                                sensorRm3100.rm3100CurrentData.EMDataCurrent_z)) %
+                                              256; //如果不成功，重新产生一个随机时间
+            }
+            enableInterrupts();                              //发送消息前开中断
             tagConfigSymple.sendNodeCount =
                 0;                         //发送数据成功,重新计算发送间隔
-            //NB_BC95.nb_recv_data.receive_status |= 0x80;
-            //NB_BC95.nb_recv_data.receive_cnt = 0;
         }
     }
 }

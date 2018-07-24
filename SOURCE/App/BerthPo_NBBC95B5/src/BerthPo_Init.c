@@ -6,6 +6,7 @@
 #include "Drivers_BC95.h"
 #include "Drivers_NFC.h"
 #include "BerthPo_Common.h"
+#include "BerthPo_Sleep.h"
 /***********************引用变量************************/
 extern SCONTROL_CONFIG  controlConfig;
 extern SNET_MUTUAL_INFO  netMutualInfo;
@@ -88,6 +89,12 @@ void BerthPo_InitMcu()
     NFC_Operation.NFC_CallBack = BerthPo_NFCCallBack;
     NFC_Operation.NFC_NFCInit();
     NFC_Operation.NFC_PowerOn();
+	//接通电源LED1和LED2闪烁一次
+	Led_Operation.LedOn(LED_GPIO, 1);   
+    Led_Operation.LedOn(LED_GPIO, 2);
+	DelayMs(500);
+	Led_Operation.LedOff(LED_GPIO, 1);   
+    Led_Operation.LedOff(LED_GPIO, 2)
     //初始化调试串口
     /*SBSP_UART_CFG_TypeDef m_debugUartConfig;
     m_debugUartConfig.USARTNum = USART1;
@@ -128,9 +135,9 @@ void BerthPo_InitSysParam()
     {
         controlConfig.workMode = BERTHPO_MODE_FACTORY;        //ACTIVATE;
         controlConfig.initNB = 0x01;
-        controlConfig.nodeConfig.idNub[0] = (m_tagId & 0xFF);    //初始化泊位宝ID
-        controlConfig.nodeConfig.idNub[1] = (m_tagId >> 8) & 0xff;
-        controlConfig.nodeConfig.idNub[2] = (m_tagId >> 16) & 0xff;
+        controlConfig.nodeConfig.idNumber[0] = (m_tagId & 0xFF);    //初始化泊位宝ID
+        controlConfig.nodeConfig.idNumber[1] = (m_tagId >> 8) & 0xff;
+        controlConfig.nodeConfig.idNumber[2] = (m_tagId >> 16) & 0xff;
         //   controlConfig.nodeConfig.userCode = 10025;             //初始化userCode
         controlConfig.paramConfig.alarmValid =
             0x4C00;    //有效标志,第10位有车，第11位无车，第14位频繁快速唤醒报警

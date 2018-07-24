@@ -57,6 +57,12 @@ void BerthPo_InitMcu()
     NFC_Operation.NFC_PowerOn();
     //初始化SX1280
     SX1280_Operation.SX1280_PowerOn();
+    //接通电源LED1和LED2闪烁一次
+	Led_Operation.LedOn(LED_GPIO, 1);   
+    Led_Operation.LedOn(LED_GPIO, 2);
+	DelayMs(500);
+	Led_Operation.LedOff(LED_GPIO, 1);   
+    Led_Operation.LedOff(LED_GPIO, 2);
 
 }
 

@@ -27,8 +27,8 @@ void Drivers_NFCPowerOn(void)
 }
 void Drivers_NFCPowerOff(void)
 {
-	
-
+	G_NFC_GPIO_CONFIG.NFC_GPIO_BASE->DDR |= G_NFC_GPIO_CONFIG.NFC_GPIO_Pin;
+	G_NFC_GPIO_CONFIG.NFC_GPIO_BASE->ODR &= ~G_NFC_GPIO_CONFIG.NFC_GPIO_Pin;
 }
 /**
   * @brief External IT PIN4 Interrupt routine.

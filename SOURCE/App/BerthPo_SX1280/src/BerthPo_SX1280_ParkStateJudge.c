@@ -581,15 +581,16 @@ uint8_t BerthPo_SendAlarmPackage(uint8_t frameType)
                 DelayMs(300);
                 Led_Operation.LedOff(LED_GPIO, 1);
                 Led_Operation.LedOn(LED_GPIO, 2);
-				DelayMs(300);
+	        DelayMs(300);
             }
-			Led_Operation.LedOff(LED_GPIO, 1);
+	    Led_Operation.LedOff(LED_GPIO, 1);
             Led_Operation.LedOff(LED_GPIO, 2);
             return 1;
         }
         DelayMs(1);
     }
     return 0;
+    
 }
 uint8_t BerthPo_GetVccInfo()
 {
@@ -700,7 +701,7 @@ void BerthPo_JudgeChangeOfModule()    //车辆状态反转判断
     if (BerthPo_BerthStateSwithProcess() == STATE_REVERSAL)
     {
         tagConfigSymple.debugInfoFlag = 0;
-        printf("car state reversal...\r\n");
+        //printf("car state reversal...\r\n");
         while(m_sendCount > 0)
         {
             if(BerthPo_SendCarStatus(0x01) == 0)   //如果不成功
@@ -721,7 +722,7 @@ void BerthPo_JudgeChangeOfModule()    //车辆状态反转判断
     }
     else                                                        //如果状态未翻转，则启动心跳检查程序
     {
-        printf("car state not reversal...\r\n");
+        //printf("car state not reversal...\r\n");
         if ((++tagConfigSymple.sendNodeCount) >=
             tagConfigSymple.sendPackCount)       //发包控制，达到心跳发包时间
         {
